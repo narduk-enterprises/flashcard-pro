@@ -1,5 +1,5 @@
 {
-  "name": "austin-cedar-pollen",
+  "name": "polymarket-arb",
   "type": "module",
   "private": true,
   "version": "1.0.0",
@@ -14,7 +14,10 @@
   },
   "dependencies": {
     "@nuxt/ui": "^4.3.0",
+    "@polymarket/clob-client": "^5.2.1",
     "chart.js": "^4.5.1",
+    "drizzle-orm": "^0.45.1",
+    "ethers": "^6.16.0",
     "nuxt": "^4.3.0",
     "posthog-js": "^1.342.1",
     "tailwindcss": "^4.1.18",

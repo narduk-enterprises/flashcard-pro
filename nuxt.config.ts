@@ -1,3 +1,5 @@
+import pkg from './package.json'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
@@ -21,26 +23,43 @@ export default defineNuxtConfig({
   },
 
   colorMode: {
-    preference: 'system'
+    preference: 'dark'
+  },
+
+  vite: {
+    define: {
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+      __APP_VERSION__: JSON.stringify(pkg.version)
+    }
   },
 
   runtimeConfig: {
-    googlePollenApiKey: process.env.GOOGLE_POLLEN_API_KEY || '',
-    openweatherApiKey: process.env.OPENWEATHER_API_KEY || '',
+    // Server-only Polymarket secrets
+    polymarketPrivateKey: process.env.POLYMARKET_PRIVATE_KEY || '',
+    polymarketApiKey: process.env.POLYMARKET_API_KEY || '',
+    polymarketSecret: process.env.POLYMARKET_SECRET || '',
+    polymarketPassphrase: process.env.POLYMARKET_PASSPHRASE || '',
+
     public: {
-      appUrl: process.env.SITE_URL || 'https://pollen.nardukapps.com',
-      posthogKey: '',
-      ga4Id: ''
+      appUrl: process.env.SITE_URL || 'https://polymarket-arb.pages.dev',
+      posthogPublicKey: process.env.POSTHOG_PUBLIC_KEY || '',
+      posthogHost: process.env.POSTHOG_HOST || 'https://us.i.posthog.com',
+      gaMeasurementId: process.env.GA_MEASUREMENT_ID || '',
+      appName: process.env.APP_NAME || pkg.name || ''
     }
   },
 
   site: {
-    url: 'https://pollen.nardukapps.com',
-    name: 'Austin Cedar Pollen Count — Live Tracker & Forecast'
+    url: 'https://polymarket-arb.pages.dev',
+    name: 'Polymarket Arb'
   },
 
   sitemap: {
     sources: ['/api/sitemap-urls']
+  },
+
+  robots: {
+    disallow: ['/api/']
   },
 
   nitro: {
@@ -49,28 +68,33 @@ export default defineNuxtConfig({
       options: {
         target: 'esnext'
       }
+    },
+    // Inline drizzle-orm so it's bundled into the worker (not treated as external)
+    externals: {
+      inline: ['drizzle-orm']
     }
   },
 
   app: {
     head: {
-      title: 'Austin Cedar Pollen Count — Live Tracker & Forecast',
+      title: 'Polymarket Arb — Prediction Market Arbitrage Tracker',
       htmlAttrs: { lang: 'en' },
       meta: [
-        { name: 'description', content: 'Live Austin, TX cedar pollen count, 5-day forecast, and 30-day trends. Track mountain cedar allergy levels during cedar fever season (Dec–Feb). Free daily updates.' },
-        { name: 'keywords', content: 'austin pollen count today, cedar fever austin, mountain cedar allergy, austin allergy forecast, cedar pollen tracker' },
-        { property: 'og:title', content: 'Austin Cedar Pollen Count — Live Tracker & Forecast' },
-        { property: 'og:description', content: 'Live cedar pollen tracking for Austin, TX. Current levels, 5-day forecast, and seasonal trends.' },
+        { name: 'description', content: 'Automated prediction market arbitrage scanner for Polymarket. Detects pricing inefficiencies, tracks opportunities, and monitors trades in real time.' },
+        { name: 'keywords', content: 'polymarket, arbitrage, prediction markets, trading bot, arb scanner' },
+        { property: 'og:title', content: 'Polymarket Arb — Prediction Market Arbitrage Tracker' },
+        { property: 'og:description', content: 'Automated prediction market arbitrage scanner. Detects pricing inefficiencies in real time.' },
         { property: 'og:type', content: 'website' },
-        { property: 'og:url', content: 'https://pollen.nardukapps.com' },
+        { property: 'og:url', content: 'https://polymarket-arb.pages.dev' },
+        { property: 'og:site_name', content: 'Polymarket Arb' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:title', content: 'Austin Cedar Pollen Count — Live Tracker & Forecast' },
-        { name: 'twitter:description', content: 'Live cedar pollen tracking for Austin, TX. Current levels, 5-day forecast, and seasonal trends.' },
-        { name: 'theme-color', content: '#1a1a2e' },
+        { name: 'twitter:title', content: 'Polymarket Arb — Prediction Market Arbitrage Tracker' },
+        { name: 'twitter:description', content: 'Automated prediction market arbitrage scanner. Detects pricing inefficiencies in real time.' },
+        { name: 'theme-color', content: '#0a0f1a' },
         { name: 'google-site-verification', content: '' }
       ],
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+        { rel: 'canonical', href: 'https://polymarket-arb.pages.dev' }
       ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
