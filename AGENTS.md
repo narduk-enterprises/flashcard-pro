@@ -61,6 +61,18 @@ Sitemap and robots.txt are automatic. OG image templates live in `app/components
 - **Data fetching** — always use `useAsyncData` or `useFetch`, never raw `$fetch` in `<script setup>`.
 - **Client-only code** — wrap `window`/`document` access in `onMounted` or `<ClientOnly>`.
 
+## Form Standards
+
+All forms **must** follow these conventions for consistent width, spacing, and styling:
+
+- **Wrapper**: Use `<AppFormCard>` for the card chrome. Props: `title`, `description`, `icon`, `size` (`narrow` | `default` | `wide` | `full`).
+- **Validation**: Use Nuxt UI's native `<UForm :schema :state>` with Zod. Connect fields via `<UFormField name="...">`.
+- **Layout classes** (defined in `main.css`):
+  - `.form-section` — vertical flex with consistent gap between fields
+  - `.form-row` — responsive 2-column grid for side-by-side fields
+  - `.form-actions` — right-aligned button row; `.form-actions-full` for full-width buttons; `.form-actions-center` for centered
+- **Width presets**: `narrow` (24rem, login/signup), `default` (32rem), `wide` (40rem, contact/settings), `full` (no max-width)
+
 ## Starting a New Project from This Template
 
 1. Install dependencies

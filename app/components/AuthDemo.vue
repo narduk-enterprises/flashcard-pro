@@ -1,93 +1,95 @@
 <template>
-  <UCard>
-    <template #header>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-shield-check" class="text-primary size-5" />
-          <h2 class="font-semibold text-lg">Authentication</h2>
+  <AppFormCard
+    :title="loggedIn ? 'Your Account' : undefined"
+    icon="i-lucide-shield-check"
+    size="narrow"
+  >
+    <!-- Header with status badge -->
+    <template v-if="!loggedIn" #default>
+      <div class="space-y-4">
+        <!-- Mode toggle -->
+        <div class="flex gap-1">
+          <UButton
+            :variant="mode === 'login' ? 'solid' : 'ghost'"
+            color="neutral"
+            size="sm"
+            class="flex-1"
+            @click="mode = 'login'"
+          >
+            Sign In
+          </UButton>
+          <UButton
+            :variant="mode === 'signup' ? 'solid' : 'ghost'"
+            color="neutral"
+            size="sm"
+            class="flex-1"
+            @click="mode = 'signup'"
+          >
+            Sign Up
+          </UButton>
         </div>
-        <UBadge v-if="loggedIn" color="success" variant="subtle" size="sm">Signed In</UBadge>
-        <UBadge v-else color="neutral" variant="subtle" size="sm">Guest</UBadge>
+
+        <UForm :schema="schema" :state="state" class="form-section" @submit="onSubmit">
+          <UFormField label="Email" name="email">
+            <UInput
+              v-model="state.email"
+              type="email"
+              placeholder="you@example.com"
+              icon="i-lucide-mail"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField label="Password" name="password">
+            <UInput
+              v-model="state.password"
+              type="password"
+              placeholder="••••••••"
+              icon="i-lucide-lock"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="form-actions form-actions-full">
+            <UButton type="submit" :loading="submitting" icon="i-lucide-arrow-right">
+              {{ mode === 'login' ? 'Sign In' : 'Create Account' }}
+            </UButton>
+          </div>
+        </UForm>
+
+        <USeparator label="or" />
+
+        <UButton
+          block
+          color="neutral"
+          variant="soft"
+          icon="i-lucide-apple"
+          disabled
+        >
+          Sign in with Apple
+        </UButton>
+        <p class="text-xs text-center text-muted">
+          Apple Sign-In requires keys configured in <code>.env</code>
+        </p>
       </div>
     </template>
 
     <!-- Signed-in state -->
-    <div v-if="loggedIn" class="space-y-4">
-      <div class="flex items-center gap-3">
-        <UAvatar :text="user?.email?.charAt(0).toUpperCase()" size="lg" />
-        <div>
-          <p class="font-medium text-sm">{{ user?.email }}</p>
-          <p class="text-xs text-muted">Signed in</p>
+    <template v-else #default>
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <UAvatar :text="user?.email?.charAt(0).toUpperCase()" size="lg" />
+          <div>
+            <p class="font-medium text-sm">{{ user?.email }}</p>
+            <p class="text-xs text-muted">Signed in</p>
+          </div>
+        </div>
+        <div class="form-actions form-actions-full">
+          <UButton color="neutral" variant="soft" icon="i-lucide-log-out" :loading="submitting" @click="handleLogout">
+            Sign Out
+          </UButton>
         </div>
       </div>
-      <UButton block color="neutral" variant="soft" icon="i-lucide-log-out" :loading="submitting" @click="handleLogout">
-        Sign Out
-      </UButton>
-    </div>
-
-    <!-- Auth form -->
-    <div v-else class="space-y-4">
-      <div class="flex gap-1">
-        <UButton
-          :variant="mode === 'login' ? 'solid' : 'ghost'"
-          color="neutral"
-          size="sm"
-          class="flex-1"
-          @click="mode = 'login'"
-        >
-          Sign In
-        </UButton>
-        <UButton
-          :variant="mode === 'signup' ? 'solid' : 'ghost'"
-          color="neutral"
-          size="sm"
-          class="flex-1"
-          @click="mode = 'signup'"
-        >
-          Sign Up
-        </UButton>
-      </div>
-
-      <form class="space-y-3" @submit.prevent="submit">
-        <UFormField label="Email">
-          <UInput
-            v-model="email"
-            type="email"
-            placeholder="you@example.com"
-            icon="i-lucide-mail"
-            required
-          />
-        </UFormField>
-        <UFormField label="Password">
-          <UInput
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            icon="i-lucide-lock"
-            required
-          />
-        </UFormField>
-
-        <UButton type="submit" block :loading="submitting" icon="i-lucide-arrow-right">
-          {{ mode === 'login' ? 'Sign In' : 'Create Account' }}
-        </UButton>
-      </form>
-
-      <USeparator label="or" />
-
-      <UButton
-        block
-        color="neutral"
-        variant="soft"
-        icon="i-lucide-apple"
-        disabled
-      >
-        Sign in with Apple
-      </UButton>
-      <p class="text-xs text-center text-muted">
-        Apple Sign-In requires keys configured in <code>.env</code>
-      </p>
-    </div>
+    </template>
 
     <!-- Error/success toast -->
     <div v-if="message" class="mt-3">
@@ -98,18 +100,31 @@
         variant="subtle"
       />
     </div>
-  </UCard>
+  </AppFormCard>
 </template>
 
 <script setup lang="ts">
+import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 const { user, loggedIn, login, signup, logout } = useAuth()
 
 const mode = ref<'login' | 'signup'>('login')
-const email = ref('')
-const password = ref('')
 const submitting = ref(false)
 const message = ref('')
 const messageType = ref<'error' | 'success'>('success')
+
+const schema = z.object({
+  email: z.string().email('Please enter a valid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+type Schema = z.output<typeof schema>
+
+const state = reactive<Partial<Schema>>({
+  email: undefined,
+  password: undefined,
+})
 
 function showMessage(msg: string, type: 'error' | 'success' = 'success') {
   message.value = msg
@@ -117,19 +132,19 @@ function showMessage(msg: string, type: 'error' | 'success' = 'success') {
   setTimeout(() => { message.value = '' }, 4000)
 }
 
-async function submit() {
+async function onSubmit(event: FormSubmitEvent<Schema>) {
   submitting.value = true
   message.value = ''
   try {
     if (mode.value === 'login') {
-      await login(email.value, password.value)
+      await login(event.data.email, event.data.password)
       showMessage('Signed in!')
     } else {
-      await signup(email.value, password.value)
+      await signup(event.data.email, event.data.password)
       showMessage('Account created!')
     }
-    email.value = ''
-    password.value = ''
+    state.email = undefined
+    state.password = undefined
   }
   catch (err: any) {
     showMessage(err?.data?.message || err?.message || 'Something went wrong', 'error')

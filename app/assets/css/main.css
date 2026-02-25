@@ -103,3 +103,73 @@ h4,
   opacity: 0;
   transform: translateY(-8px);
 }
+
+/* ─── Form Layout Standards ─── */
+
+/* Nuxt UI components (UInput, UTextarea, USelect) need class="w-full"
+   on each instance to stretch. CSS descendant selectors cannot target
+   their internal wrapper structure. */
+
+/* Base form container — constrains width and centers the form */
+.form-container {
+  width: 100%;
+  max-width: 32rem; /* 512px — ideal for single-column forms */
+  margin-inline: auto;
+}
+
+/* Narrow variant for login/signup (max 24rem / 384px) */
+.form-narrow {
+  max-width: 24rem;
+}
+
+/* Wide variant for multi-column contact/settings forms (max 40rem / 640px) */
+.form-wide {
+  max-width: 40rem;
+}
+
+/* Full-width variant — no max-width, used inside cards or sidebars */
+.form-full {
+  max-width: none;
+}
+
+/* Consistent vertical spacing between form field groups */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem; /* 20px — matches Nuxt UI's space-y-5 */
+}
+
+/* Two-column row for side-by-side fields (name + email, etc.) */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Standardized button row — right-aligned with gap */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+/* Center-aligned actions variant for login/signup */
+.form-actions-center {
+  justify-content: center;
+}
+
+/* Full-width single button variant */
+.form-actions-full {
+  flex-direction: column;
+}
+
+.form-actions-full > * {
+  width: 100%;
+}

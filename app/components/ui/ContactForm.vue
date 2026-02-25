@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
 /**
  * ContactForm — Ready-to-use contact form with Zod validation.
  *
+ * Uses the standardized form layout classes (form-section, form-row, form-actions)
+ * and AppFormCard wrapper for consistent styling.
+ *
  * @example
- * <ContactForm
+ * <UiContactForm
  *   title="Get in Touch"
  *   description="We'd love to hear from you."
  *   endpoint="/api/contact"
  * />
  */
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title?: string
   description?: string
   /** API endpoint to submit the form to */
@@ -20,6 +24,7 @@ withDefaults(defineProps<{
 }>(), {
   title: 'Contact Us',
   submitLabel: 'Send Message',
+  endpoint: '/api/contact',
 })
 
 const schema = z.object({
@@ -29,47 +34,75 @@ const schema = z.object({
   message: z.string().min(10, 'Message must be at least 10 characters'),
 })
 
-const { state, errors, loading, submit, reset } = useFormHandler({
-  schema,
-  defaults: { name: '', email: '', subject: '', message: '' },
-  endpoint: '/api/contact',
-  successMessage: 'Your message has been sent! We\'ll get back to you soon.',
-  onSuccess: () => reset(),
+type Schema = z.output<typeof schema>
+
+const state = reactive<Partial<Schema>>({
+  name: undefined,
+  email: undefined,
+  subject: undefined,
+  message: undefined,
 })
+
+const toast = useToast()
+
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  try {
+    await $fetch(props.endpoint, {
+      method: 'POST',
+      body: event.data,
+    })
+    toast.add({
+      title: 'Success',
+      description: 'Your message has been sent! We\'ll get back to you soon.',
+      color: 'success',
+      icon: 'i-lucide-check-circle',
+    })
+    // Reset state
+    state.name = undefined
+    state.email = undefined
+    state.subject = undefined
+    state.message = undefined
+  } catch (err: any) {
+    toast.add({
+      title: 'Error',
+      description: err?.data?.message || 'Something went wrong. Please try again.',
+      color: 'error',
+      icon: 'i-lucide-x-circle',
+    })
+  }
+}
 </script>
 
 <template>
-  <section>
-    <div v-if="title || description" class="mb-8">
-      <h2 v-if="title" class="font-display text-2xl sm:text-3xl font-bold mb-3">{{ title }}</h2>
-      <p v-if="description" class="text-muted max-w-lg">{{ description }}</p>
-    </div>
-
-    <UCard>
-      <form class="space-y-5" @submit.prevent="submit">
-        <div class="grid sm:grid-cols-2 gap-5">
-          <UFormField label="Name" :error="errors.name" required>
-            <UInput v-model="state.name" placeholder="Your name" icon="i-lucide-user" />
-          </UFormField>
-          <UFormField label="Email" :error="errors.email" required>
-            <UInput v-model="state.email" type="email" placeholder="you@example.com" icon="i-lucide-mail" />
-          </UFormField>
-        </div>
-
-        <UFormField label="Subject" :error="errors.subject" required>
-          <UInput v-model="state.subject" placeholder="What is this about?" icon="i-lucide-message-square" />
+  <AppFormCard
+    :title="title"
+    :description="description"
+    icon="i-lucide-mail"
+    size="wide"
+  >
+    <UForm :schema="schema" :state="state" class="form-section" @submit="onSubmit">
+      <div class="form-row">
+        <UFormField label="Name" name="name" required>
+          <UInput v-model="state.name" placeholder="Your name" icon="i-lucide-user" class="w-full" />
         </UFormField>
-
-        <UFormField label="Message" :error="errors.message" required>
-          <UTextarea v-model="state.message" :rows="5" placeholder="Tell us what you need..." />
+        <UFormField label="Email" name="email" required>
+          <UInput v-model="state.email" type="email" placeholder="you@example.com" icon="i-lucide-mail" class="w-full" />
         </UFormField>
+      </div>
 
-        <div class="flex justify-end">
-          <UButton type="submit" size="lg" :loading="loading" icon="i-lucide-send">
-            {{ submitLabel }}
-          </UButton>
-        </div>
-      </form>
-    </UCard>
-  </section>
+      <UFormField label="Subject" name="subject" required>
+        <UInput v-model="state.subject" placeholder="What is this about?" icon="i-lucide-message-square" class="w-full" />
+      </UFormField>
+
+      <UFormField label="Message" name="message" required>
+        <UTextarea v-model="state.message" :rows="5" placeholder="Tell us what you need..." class="w-full" />
+      </UFormField>
+
+      <div class="form-actions">
+        <UButton type="submit" size="lg" icon="i-lucide-send">
+          {{ submitLabel }}
+        </UButton>
+      </div>
+    </UForm>
+  </AppFormCard>
 </template>
