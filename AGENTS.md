@@ -142,8 +142,8 @@ All template derivatives should utilize **Doppler Cross-Project Secret Referenci
 1. **`narduk-enterprise-apps` Hub**: This project holds infrastructure deploy credentials (e.g., `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`).
 2. **`narduk-analytics` Hub**: This project holds central management keys for generating analytics (e.g., `POSTHOG_PERSONAL_API_KEY`, `GA_ACCOUNT_ID`).
 3. **App Spoke (`<app-name>`)**: This is your new app's isolated project. Inherit the deploy credentials from the Hub using Doppler references:
-   - `CLOUDFLARE_API_TOKEN` = `${doppler.project.narduk-enterprise-apps.config.prd.secret.CLOUDFLARE_API_TOKEN}`
-   - `CLOUDFLARE_ACCOUNT_ID` = `${doppler.project.narduk-enterprise-apps.config.prd.secret.CLOUDFLARE_ACCOUNT_ID}`
+   - `CLOUDFLARE_API_TOKEN` = `${narduk-enterprise-apps.prd.CLOUDFLARE_API_TOKEN}`
+   - `CLOUDFLARE_ACCOUNT_ID` = `${narduk-enterprise-apps.prd.CLOUDFLARE_ACCOUNT_ID}`
 
 **Reference:** See `nuxt-v4-template-examples/nuxt.config.ts` for the full runtimeConfig block and `nuxt-v4-template-examples/AGENT_ANALYTICS.md` for automation script details.
 
