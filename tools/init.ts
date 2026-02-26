@@ -139,7 +139,8 @@ async function main() {
 
   // 3. Extract DB ID and rewrite wrangler.json
   console.log('\nStep 3/4: Linking Database to wrangler.json...')
-  const idMatch = d1Output.match(/database_id[=:]\s*"?([a-fA-F0-9-]+)"?/)
+  // Match both key=value format and wrangler table format (│ DB │ uuid │)
+  const idMatch = d1Output.match(/database_id[=:]\s*"?([a-fA-F0-9-]+)"?/) || d1Output.match(/│\s*DB\s*│\s*([a-fA-F0-9-]+)\s*│/)
   
   if (!idMatch) {
     console.warn(`  ⚠️ Could not parse database_id from Wrangler output.`)
@@ -220,7 +221,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     const toolsDir = path.join(ROOT_DIR, 'tools')
     if (await fs.stat(path.join(toolsDir, 'setup-analytics.ts')).catch(() => null)) {
       console.log('  Installing ephemeral dependencies (googleapis, google-auth-library)...')
-      execSync('npm i --no-save googleapis google-auth-library', { encoding: 'utf-8', stdio: 'pipe' })
+      execSync('pnpm add --save-dev googleapis google-auth-library', { encoding: 'utf-8', stdio: 'pipe' })
       
       console.log('  Executing Narduk Analytics provisioning pipeline...')
       execSync(`doppler run --project narduk-analytics --config prd -- npx jiti tools/setup-analytics.ts setup:all`, {
