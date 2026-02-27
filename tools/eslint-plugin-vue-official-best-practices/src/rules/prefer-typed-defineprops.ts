@@ -22,13 +22,11 @@ export default {
     },
   },
   create(context: RuleContext<string, any[]>): RuleListener {
-    const parserServices = context.parserServices as any
-    const filename = context.getFilename()
+    const parserServices = (context.sourceCode?.parserServices ?? context.parserServices) as any
+    const filename = context.filename ?? context.getFilename?.()
     
     // Only apply to TypeScript files
-    const isTypeScript = filename.endsWith('.ts') || 
-                        filename.endsWith('.vue') && 
-                        (filename.includes('lang="ts"') || filename.includes("lang='ts'"))
+    const isTypeScript = filename.endsWith('.ts') || filename.endsWith('.vue')
     
     if (!isTypeScript) {
       return {}
@@ -43,6 +41,9 @@ export default {
               node.callee &&
               node.callee.type === 'Identifier' &&
               node.callee.typeParameters === undefined &&
+              node.callee.typeArguments === undefined &&
+              node.typeParameters === undefined &&
+              node.typeArguments === undefined &&
               node.callee.name === 'defineProps'
             ) {
               context.report({
@@ -67,7 +68,9 @@ export default {
             node.callee.type === 'Identifier' &&
             node.callee.name === 'defineProps' &&
             node.callee.typeParameters === undefined &&
-            node.typeParameters === undefined
+            node.callee.typeArguments === undefined &&
+            node.typeParameters === undefined &&
+            node.typeArguments === undefined
           ) {
             // Check if it's using runtime props (object literal) vs typed props
             if (node.arguments.length > 0) {

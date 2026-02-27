@@ -25,7 +25,7 @@ export default {
     },
   },
   create(context: RuleContext<string, any[]>): RuleListener {
-    const parserServices = context.parserServices as any
+    const parserServices = (context.sourceCode?.parserServices ?? context.parserServices) as any
     
     if (!parserServices || !parserServices.defineTemplateBodyVisitor) {
       // For non-Vue files, check directly

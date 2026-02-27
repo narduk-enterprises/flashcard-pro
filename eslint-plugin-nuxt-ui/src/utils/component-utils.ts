@@ -103,11 +103,14 @@ export function isBooleanProp(value: unknown): boolean {
 /**
  * Extract static string value from attribute value
  */
-export function getStaticStringValue(value: unknown): string | null {
+export function getStaticStringValue(value: any): string | null {
   if (typeof value === 'string') {
     return value
   }
   if (value?.type === 'Literal' && typeof value.value === 'string') {
+    return value.value
+  }
+  if (value?.type === 'VLiteral' && typeof value.value === 'string') {
     return value.value
   }
   return null

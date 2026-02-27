@@ -4,7 +4,7 @@
  * Detects Nuxt 2 fetch() hook and guides toward useFetch/useAsyncData
  */
 
-import type { RuleContext, RuleListener } from 'eslint'
+import type { Rule } from 'eslint'
 import { getApiSpec } from '../utils/spec-loader'
 
 export default {
@@ -20,8 +20,8 @@ export default {
       legacyFetch: 'Use useFetch() or useAsyncData() instead of fetch() hook. See: {{docUrl}}',
     },
   },
-  create(context: RuleContext<string, any[]>): RuleListener {
-    const parserServices = context.parserServices as any
+  create(context: Rule.RuleContext<string, any[]>): Rule.RuleListener {
+    const parserServices = (context.sourceCode?.parserServices ?? context.parserServices) as any
     
     if (!parserServices || !parserServices.defineTemplateBodyVisitor) {
       return {}
@@ -35,12 +35,14 @@ export default {
       {},
       {
         // Check for fetch() method in Options API
-        'MethodDefinition[key.name="fetch"]'(node: any) {
-          context.report({
-            node,
-            messageId: 'legacyFetch',
-            data: { docUrl },
-          })
+        'Property[key.name="fetch"]'(node: any) {
+          if (node.method && node.parent?.type === 'ObjectExpression' && node.parent.parent?.type === 'ExportDefaultDeclaration') {
+            context.report({
+              node,
+              messageId: 'legacyFetch',
+              data: { docUrl },
+            })
+          }
         },
       }
     )

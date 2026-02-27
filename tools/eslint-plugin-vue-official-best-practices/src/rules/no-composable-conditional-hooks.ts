@@ -45,7 +45,7 @@ export default {
     },
   },
   create(context: RuleContext<string, any[]>): RuleListener {
-    const filename = context.getFilename()
+    const filename = context.filename ?? context.getFilename?.()
     
     // Only apply to composable files (heuristic)
     const isComposableFile = filename.includes('composables/') || 
@@ -66,10 +66,14 @@ export default {
         // Check if it's inside a conditional
         let current: any = parent
         while (current) {
-          // If inside an if statement at top level, warn
+          // If inside a conditional or loop, warn
           if (
-            current.type === 'IfStatement' &&
-            isTopLevel(current)
+            current.type === 'IfStatement' ||
+            current.type === 'ForStatement' ||
+            current.type === 'WhileStatement' ||
+            current.type === 'SwitchStatement' ||
+            current.type === 'ConditionalExpression' ||
+            current.type === 'LogicalExpression'
           ) {
             context.report({
               node,
@@ -79,15 +83,13 @@ export default {
             return
           }
           
-          // If inside a function that's not at top level, allow (it's conditional by nature)
+          // Stop when we reach the function boundary where the composable resides
           if (
             current.type === 'FunctionDeclaration' ||
             current.type === 'FunctionExpression' ||
             current.type === 'ArrowFunctionExpression'
           ) {
-            if (!isTopLevel(current)) {
-              return // Allow - it's inside a function
-            }
+            break
           }
           
           current = current.parent

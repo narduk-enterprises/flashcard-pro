@@ -6,7 +6,7 @@
  */
 
 import type { AST } from 'vue-eslint-parser'
-import type { RuleContext, RuleListener } from 'eslint'
+import type { Rule } from 'eslint'
 import { getApiSpec } from '../utils/spec-loader'
 
 export default {
@@ -24,8 +24,8 @@ export default {
       legacyHeadOption: 'Use useHead() composable instead of head option. See: {{docUrl}}',
     },
   },
-  create(context: RuleContext<string, any[]>): RuleListener {
-    const parserServices = context.parserServices as any
+  create(context: Rule.RuleContext<string, any[]>): Rule.RuleListener {
+    const parserServices = (context.sourceCode?.parserServices ?? context.parserServices) as any
     
     // Only process Vue files
     if (!parserServices || !parserServices.defineTemplateBodyVisitor) {
@@ -57,34 +57,11 @@ export default {
                   ((prop.key.type === 'Identifier' && prop.key.name === 'head') ||
                    (prop.key.type === 'Literal' && prop.key.value === 'head'))
                 ) {
+                  if (prop.method) continue
                   context.report({
                     node: prop,
                     messageId: 'legacyHeadOption',
                     data: { docUrl },
-                    fix(fixer) {
-                      // Only autofix if it's a simple literal object
-                      if (
-                        prop.value &&
-                        prop.value.type === 'ObjectExpression' &&
-                        prop.value.properties.length > 0
-                      ) {
-                        const firstProp = prop.value.properties[0]
-                        if (
-                          firstProp.type === 'Property' &&
-                          firstProp.key &&
-                          firstProp.key.type === 'Identifier' &&
-                          (firstProp.key.name === 'title' || firstProp.key.name === 'description') &&
-                          firstProp.value &&
-                          firstProp.value.type === 'Literal'
-                        ) {
-                          const key = firstProp.key.name
-                          const value = firstProp.value.value
-                          const useHeadCall = `useHead({ ${key}: '${value}' })`
-                          return fixer.replaceText(prop, useHeadCall)
-                        }
-                      }
-                      return null
-                    },
                   })
                 }
               }
@@ -93,12 +70,14 @@ export default {
         },
         
         // Check for head() method
-        'MethodDefinition[key.name="head"]'(node: any) {
-          context.report({
-            node,
-            messageId: 'legacyHeadMethod',
-            data: { docUrl },
-          })
+        'Property[key.name="head"]'(node: any) {
+          if (node.method && node.parent?.type === 'ObjectExpression' && node.parent.parent?.type === 'ExportDefaultDeclaration') {
+            context.report({
+              node,
+              messageId: 'legacyHeadMethod',
+              data: { docUrl },
+            })
+          }
         },
       }
     )

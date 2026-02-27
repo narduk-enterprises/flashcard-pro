@@ -1,3 +1,4 @@
+import * as tsParser from '@typescript-eslint/parser'
 /**
  * Tests for require-script-setup rule
  */
@@ -6,17 +7,26 @@ import { RuleTester } from 'eslint'
 import rule from '../src/rules/require-script-setup'
 import vueParser from 'vue-eslint-parser'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parser: vueParser,
-  parserOptions: {
+  languageOptions: {
+    parser: vueParser,
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+      parser: tsParser,
+    },
   },
 })
 
 ruleTester.run('require-script-setup', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: `
         <script setup>
         const count = ref(0)
@@ -24,6 +34,7 @@ ruleTester.run('require-script-setup', rule, {
       `,
     },
     {
+      filename: 'test.vue',
       code: `
         <script setup lang="ts">
         const props = defineProps<{ name: string }>()
@@ -31,6 +42,7 @@ ruleTester.run('require-script-setup', rule, {
       `,
     },
     {
+      filename: 'test.vue',
       code: `
         <script>
         export default {
@@ -43,6 +55,7 @@ ruleTester.run('require-script-setup', rule, {
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: `
         <script>
         export default {

@@ -5,28 +5,39 @@
 import { RuleTester } from 'eslint'
 import rule from '../src/rules/valid-useAsyncData'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+    },
   },
 })
 
 ruleTester.run('valid-useAsyncData', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: "useAsyncData('key', () => fetch('/api'))",
     },
     {
+      filename: 'test.vue',
       code: "useAsyncData('key', async () => { return await fetch('/api') })",
     },
     {
+      filename: 'test.vue',
       code: 'useAsyncData(key, () => fetch("/api"))',
       options: [{ requireStableAsyncDataKeys: false }],
     },
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: 'useAsyncData()',
       errors: [
         {
@@ -35,6 +46,7 @@ ruleTester.run('valid-useAsyncData', rule, {
       ],
     },
     {
+      filename: 'test.vue',
       code: "useAsyncData('key')",
       errors: [
         {
@@ -43,6 +55,7 @@ ruleTester.run('valid-useAsyncData', rule, {
       ],
     },
     {
+      filename: 'test.vue',
       code: 'useAsyncData(key, () => fetch("/api"))',
       errors: [
         {

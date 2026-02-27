@@ -1,13 +1,13 @@
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { request } from 'node:https'
 import { URL } from 'node:url'
 import 'dotenv/config'
 
 /** HTTPS request helper (avoids TLS issues some envs have with fetch + PostHog). */
-function httpsJson(
+function _httpsJson(
   method: string,
   urlStr: string,
   opts: { headers?: Record<string, string>; body?: object } = {}
@@ -254,7 +254,6 @@ function findVerificationFiles(): string[] {
   const publicDir = join(process.cwd(), 'public')
   const found: string[] = []
   try {
-    const { readdirSync } = require('node:fs')
     for (const file of readdirSync(publicDir)) {
       if (file.startsWith('google') && (file.endsWith('.html') || /^google[0-9a-z]+$/.test(file))) {
         found.push(`public/${file}`)
@@ -314,6 +313,7 @@ async function runGaSetup() {
     process.exit(1)
   }
 
+  // @ts-expect-error googleapis is used as an optional dev script dependency
   const { google } = await import('googleapis')
   const credentials = loadCredentials()
   const auth = new google.auth.GoogleAuth({
@@ -427,6 +427,7 @@ async function runGscPipeline() {
     process.exit(1)
   }
 
+  // @ts-expect-error googleapis is used as an optional dev script dependency
   const { google } = await import('googleapis')
 
   const credentials = loadCredentials()
@@ -477,7 +478,6 @@ async function runGscPipeline() {
 
     const publicDir = join(process.cwd(), 'public')
     if (!existsSync(publicDir)) {
-      const { mkdirSync } = require('node:fs')
       mkdirSync(publicDir, { recursive: true })
     }
 
@@ -509,6 +509,7 @@ async function runGscVerify() {
     process.exit(1)
   }
 
+  // @ts-expect-error googleapis is used as an optional dev script dependency
   const { google } = await import('googleapis')
 
   const credentials = loadCredentials()

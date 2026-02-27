@@ -79,6 +79,7 @@ withDefaults(defineProps<{
       :style="{
         fontSize: '56px',
         fontWeight: '700',
+        // eslint-disable-next-line atx/no-inline-hex
         color: '#f1f5f9',
         lineHeight: '1.15',
         marginBottom: '16px',
@@ -94,6 +95,7 @@ withDefaults(defineProps<{
       :style="{
         fontSize: '24px',
         fontWeight: '400',
+        // eslint-disable-next-line atx/no-inline-hex
         color: '#94a3b8',
         lineHeight: '1.5',
         maxWidth: '800px',
@@ -118,6 +120,7 @@ withDefaults(defineProps<{
           width: '32px',
           height: '32px',
           borderRadius: '8px',
+          // eslint-disable-next-line atx/no-inline-hex
           background: '#10b981',
           display: 'flex',
           alignItems: 'center',
@@ -133,6 +136,7 @@ withDefaults(defineProps<{
         :style="{
           fontSize: '18px',
           fontWeight: '600',
+          // eslint-disable-next-line atx/no-inline-hex
           color: '#64748b',
         }"
       >

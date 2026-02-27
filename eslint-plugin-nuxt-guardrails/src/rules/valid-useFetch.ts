@@ -4,7 +4,7 @@
  * Validates useFetch usage patterns
  */
 
-import type { RuleContext, RuleListener } from 'eslint'
+import type { Rule } from 'eslint'
 import { getApiSpec } from '../utils/spec-loader'
 
 export default {
@@ -21,7 +21,7 @@ export default {
       invalidOptions: 'useFetch options may be invalid. See: {{docUrl}}',
     },
   },
-  create(context: RuleContext<string, any[]>): RuleListener {
+  create(context: Rule.RuleContext<string, any[]>): Rule.RuleListener {
     const useFetchSpec = getApiSpec('useFetch')
     const docUrl = useFetchSpec?.docUrl || 'https://nuxt.com/docs/api/composables/use-fetch'
     

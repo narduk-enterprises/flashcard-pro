@@ -38,7 +38,10 @@ export interface RuleContext {
     node: AST.Node
     messageId: string
     data?: Record<string, string>
-    fix?: (_fixer: { replaceText: (_node: AST.Node, _text: string) => unknown }) => unknown
+    fix?: (_fixer: {
+      replaceText: (_node: AST.Node, _text: string) => unknown,
+      replaceTextRange: (_range: [number, number], _text: string) => unknown
+    }) => unknown
   }) => void
   getSourceCode: () => { getText: (_node?: AST.Node) => string }
   sourceCode: {
@@ -210,6 +213,11 @@ export default {
                     componentName: normalizedName,
                     replacement,
                   },
+                  fix: deprecated.replacedBy && slotAttr.key.type === 'VDirectiveKey' && slotAttr.key.argument && slotAttr.key.argument.range
+                    ? (fixer) => {
+                        return fixer.replaceTextRange((slotAttr.key as AST.VDirectiveKey).argument!.range!, deprecated.replacedBy!)
+                      }
+                    : undefined,
                 })
               } else if (!validSlots.has(slotName) && slotName !== 'default') {
                 // Allow dynamic slots for components that support them

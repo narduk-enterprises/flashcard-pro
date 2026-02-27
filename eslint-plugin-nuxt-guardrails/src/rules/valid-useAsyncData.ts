@@ -4,7 +4,7 @@
  * Validates useAsyncData usage patterns
  */
 
-import type { RuleContext, RuleListener } from 'eslint'
+import type { Rule } from 'eslint'
 import { isLiteral } from '../utils/ast-utils'
 import type { PluginOptions } from '../types'
 import { getApiSpec } from '../utils/spec-loader'
@@ -58,10 +58,10 @@ function isValidAsyncDataKey(node: any): boolean {
     return false
   }
   
-  // Identifier - could be a computed ref (we'll allow this as it's a common pattern)
-  // The developer is responsible for ensuring the ref contains a string
+  // Identifier - computed ref or variable
+  // By default, asyncData requires stable keys, so Identifiers should be rejected
   if (node.type === 'Identifier') {
-    return true
+    return false
   }
   
   return false
@@ -94,7 +94,7 @@ export default {
       callbackReturnsNothing: 'useAsyncData callback should return a value. See: {{docUrl}}',
     },
   },
-  create(context: RuleContext<string, PluginOptions[]>): RuleListener {
+  create(context: Rule.RuleContext<string, PluginOptions[]>): Rule.RuleListener {
     const options = context.options[0] || {}
     const requireStableKeys = options.requireStableAsyncDataKeys !== false
     

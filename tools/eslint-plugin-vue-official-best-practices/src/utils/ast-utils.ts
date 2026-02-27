@@ -70,6 +70,9 @@ export function isDomAccess(node: any): { type: 'window' | 'document' | 'localSt
   
   // Direct identifier access (window, document, localStorage)
   if (node.type === 'Identifier') {
+    if (node.parent && node.parent.type === 'MemberExpression' && node.parent.object === node) {
+      return { type: null, member: null }
+    }
     if (node.name === 'window') {
       return { type: 'window', member: null }
     }
@@ -206,6 +209,15 @@ export function isTopLevel(node: any): boolean {
   while (current) {
     // If we hit a function/class/method, we're not at top level
     if (
+      current.type === 'BlockStatement' ||
+      current.type === 'IfStatement' ||
+      current.type === 'ForStatement' ||
+      current.type === 'ForInStatement' ||
+      current.type === 'ForOfStatement' ||
+      current.type === 'WhileStatement' ||
+      current.type === 'SwitchStatement' ||
+      current.type === 'TryStatement' ||
+      current.type === 'CatchClause' ||
       current.type === 'FunctionDeclaration' ||
       current.type === 'FunctionExpression' ||
       current.type === 'ArrowFunctionExpression' ||

@@ -15,7 +15,6 @@ function getDirname(): string {
   } catch {
     // CJS fallback - use require.main or process.cwd()
     try {
-      // @ts-expect-error - CJS context (__dirname not available in ESM)
       return __dirname
     } catch {
       return process.cwd()
@@ -52,6 +51,7 @@ export function loadSpec(specPath?: string): NuxtUISpec {
     }
   }
   
+  console.log('SPEC PATH RESOLVED:', path);
   if (!path) {
     // Return empty spec if file doesn't exist (spec not generated yet)
     return {
@@ -74,5 +74,17 @@ export function getComponentSpec(
   specPath?: string
 ): import('../types').ComponentSpec | null {
   const spec = loadSpec(specPath)
-  return spec.components[componentName] || null
+  if (spec.components[componentName]) {
+    return spec.components[componentName]
+  }
+  
+  // Try case-insensitive lookup for improperly normalized names (e.g. USelectmenu vs USelectMenu)
+  const lowerName = componentName.toLowerCase()
+  for (const key of Object.keys(spec.components)) {
+    if (key.toLowerCase() === lowerName) {
+      return spec.components[key]
+    }
+  }
+  
+  return null
 }

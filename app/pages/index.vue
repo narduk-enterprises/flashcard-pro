@@ -1,3 +1,10 @@
+<script setup lang="ts">
+useSeoMeta({
+  title: 'Welcome to the Nuxt 4 Template',
+  description: 'Your scalable foundation for everything.'
+})
+</script>
+
 <template>
   <UPage>
     <UPageHero
@@ -8,7 +15,7 @@
         <UButton
           to="https://ui3.nuxt.dev"
           target="_blank"
-          icon="i-heroicons-book-open"
+          icon="i-lucide-book-open"
           color="neutral"
         >
           Nuxt UI Docs
@@ -17,10 +24,3 @@
     </UPageHero>
   </UPage>
 </template>
-
-<script setup lang="ts">
-useSeoMeta({
-  title: 'Welcome to the Nuxt 4 Template',
-  description: 'Your scalable foundation for everything.'
-})
-</script>

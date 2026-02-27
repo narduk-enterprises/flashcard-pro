@@ -53,7 +53,7 @@ export default {
     },
   },
   create(context: RuleContext<string, any[]>): RuleListener {
-    const parserServices = context.parserServices as any
+    const parserServices = (context.sourceCode?.parserServices ?? context.parserServices) as any
     const options = context.options[0] || {}
     const maxTernaryDepth = options.maxTernaryDepth ?? 1
     const maxLogicalOps = options.maxLogicalOps ?? 3

@@ -1,3 +1,4 @@
+import * as tsParser from '@typescript-eslint/parser'
 /**
  * Tests for no-legacy-head rule
  */
@@ -6,17 +7,26 @@ import { RuleTester } from 'eslint'
 import rule from '../src/rules/no-legacy-head'
 import vueParser from 'vue-eslint-parser'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parser: vueParser,
-  parserOptions: {
+  languageOptions: {
+    parser: vueParser,
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+      parser: tsParser,
+    },
   },
 })
 
 ruleTester.run('no-legacy-head', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: `
         <script setup>
         useHead({ title: 'Test' })
@@ -24,6 +34,7 @@ ruleTester.run('no-legacy-head', rule, {
       `,
     },
     {
+      filename: 'test.vue',
       code: `
         <script>
         export default {
@@ -37,6 +48,7 @@ ruleTester.run('no-legacy-head', rule, {
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: `
         <script>
         export default {
@@ -51,8 +63,10 @@ ruleTester.run('no-legacy-head', rule, {
           messageId: 'legacyHeadMethod',
         },
       ],
+      // No output expected since it's a method which requires manual fix
     },
     {
+      filename: 'test.vue',
       code: `
         <script>
         export default {

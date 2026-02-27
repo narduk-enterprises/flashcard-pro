@@ -128,6 +128,7 @@ export default {
         }
 
         const normalizedName = normalizeComponentName(componentName, prefixes)
+        console.log("VElement:", componentName, "Normalized:", normalizedName, "Spec:", !!getComponentSpec(normalizedName!, options.specPath))
         if (!normalizedName) return
 
         const spec = getComponentSpec(normalizedName, options.specPath)
@@ -146,25 +147,14 @@ export default {
 
         // Check all attributes for event handlers
         for (const attr of vElement.startTag.attributes) {
-          if (attr.type !== 'VAttribute') continue
+          if (attr.type !== 'VAttribute' && attr.type !== 'VDirective') continue
 
           if (attr.key.type === 'VDirectiveKey' && attr.key.name.name === 'on') {
             const eventName = attr.key.argument
             if (eventName && eventName.type === 'VIdentifier') {
               const eventNameStr = eventName.name
 
-              // Allow standard DOM events (click, input, change, etc.)
-              if (STANDARD_DOM_EVENTS.has(eventNameStr.toLowerCase())) {
-                continue
-              }
-
-              // Allow v-model update events (@update:propName)
-              // When using v-model:open, Vue emits @update:open events
-              if (eventNameStr.startsWith('update:')) {
-                continue
-              }
-
-              // Check if deprecated
+              // Check if deprecated FIRST so we report specifically deprecated DOM events too (like @change)
               const deprecated = deprecatedEvents.get(eventNameStr)
               if (deprecated) {
                 const replacement = deprecated.replacedBy
@@ -185,7 +175,21 @@ export default {
                       }
                     : undefined,
                 })
-              } else if (!validEvents.has(eventNameStr)) {
+                continue
+              }
+
+              // Allow standard DOM events (click, input, change, etc.)
+              if (STANDARD_DOM_EVENTS.has(eventNameStr.toLowerCase())) {
+                continue
+              }
+
+              // Allow v-model update events (@update:propName)
+              // When using v-model:open, Vue emits @update:open events
+              if (eventNameStr.startsWith('update:')) {
+                continue
+              }
+
+              if (!validEvents.has(eventNameStr)) {
                 context.report({
                   node: attr,
                   messageId: 'unknownEvent',

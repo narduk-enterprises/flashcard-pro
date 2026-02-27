@@ -5,27 +5,38 @@
 import { RuleTester } from 'eslint'
 import rule from '../src/rules/no-ssr-dom-access'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+    },
   },
 })
 
 ruleTester.run('no-ssr-dom-access', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: 'if (import.meta.client) { window.location.href = "/" }',
     },
     {
+      filename: 'test.vue',
       code: 'onMounted(() => { document.title = "Test" })',
     },
     {
+      filename: 'test.vue',
       code: 'if (import.meta.client) { localStorage.setItem("key", "value") }',
     },
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: 'window.location.href = "/"',
       errors: [
         {
@@ -35,6 +46,7 @@ ruleTester.run('no-ssr-dom-access', rule, {
       ],
     },
     {
+      filename: 'test.vue',
       code: 'document.title = "Test"',
       errors: [
         {
@@ -44,6 +56,7 @@ ruleTester.run('no-ssr-dom-access', rule, {
       ],
     },
     {
+      filename: 'test.vue',
       code: 'localStorage.setItem("key", "value")',
       errors: [
         {

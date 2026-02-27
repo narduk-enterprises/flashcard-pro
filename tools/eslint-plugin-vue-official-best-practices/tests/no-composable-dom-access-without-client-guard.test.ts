@@ -5,16 +5,24 @@
 import { RuleTester } from 'eslint'
 import rule from '../src/rules/no-composable-dom-access-without-client-guard'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+    },
   },
 })
 
 ruleTester.run('no-composable-dom-access-without-client-guard', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: `
         export function useWindow() {
           if (import.meta.client) {
@@ -25,6 +33,7 @@ ruleTester.run('no-composable-dom-access-without-client-guard', rule, {
       filename: 'composables/useWindow.ts',
     },
     {
+      filename: 'test.vue',
       code: `
         export function useWindow() {
           onMounted(() => {
@@ -37,6 +46,7 @@ ruleTester.run('no-composable-dom-access-without-client-guard', rule, {
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: `
         export function useWindow() {
           window.something = true

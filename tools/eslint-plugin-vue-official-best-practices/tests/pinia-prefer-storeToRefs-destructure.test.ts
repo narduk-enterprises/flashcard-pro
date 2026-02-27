@@ -5,22 +5,31 @@
 import { RuleTester } from 'eslint'
 import rule from '../src/rules/pinia-prefer-storeToRefs-destructure'
 
+import { describe, it, afterAll } from 'vitest'
+RuleTester.describe = describe
+RuleTester.it = it
+RuleTester.afterAll = afterAll
+
 const ruleTester = new RuleTester({
-  parserOptions: {
+  languageOptions: {
+    parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
+    },
   },
 })
 
 ruleTester.run('pinia-prefer-storeToRefs-destructure', rule, {
   valid: [
     {
+      filename: 'test.vue',
       code: `
         const store = useCounterStore()
         const { count } = storeToRefs(store)
       `,
     },
     {
+      filename: 'test.vue',
       code: `
         const { init } = useNotifications()
       `,
@@ -28,6 +37,7 @@ ruleTester.run('pinia-prefer-storeToRefs-destructure', rule, {
   ],
   invalid: [
     {
+      filename: 'test.vue',
       code: `
         const { count } = useCounterStore()
       `,
@@ -36,6 +46,9 @@ ruleTester.run('pinia-prefer-storeToRefs-destructure', rule, {
           messageId: 'preferStoreToRefs',
         },
       ],
+      output: `
+        const { count } = storeToRefs(useCounterStore())
+      `,
     },
   ],
 })
