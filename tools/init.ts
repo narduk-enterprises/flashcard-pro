@@ -250,7 +250,9 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
       CLOUDFLARE_API_TOKEN: '${narduk-enterprise-apps.prd.CLOUDFLARE_API_TOKEN}',
       CLOUDFLARE_ACCOUNT_ID: '${narduk-enterprise-apps.prd.CLOUDFLARE_ACCOUNT_ID}',
       POSTHOG_PUBLIC_KEY: '${narduk-analytics.prd.POSTHOG_PUBLIC_KEY}',
+      POSTHOG_PROJECT_ID: '${narduk-analytics.prd.POSTHOG_PROJECT_ID}',
       POSTHOG_HOST: '${narduk-analytics.prd.POSTHOG_HOST}',
+      APP_NAME: APP_NAME,
     }
 
     const toSet = Object.entries(hubSecrets)
