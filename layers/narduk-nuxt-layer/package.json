@@ -1,6 +1,6 @@
 {
   "name": "@loganrenz/nuxt-v4-template-layer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Narduk Nuxt 4 Layer — shared components, composables, server routes, and Drizzle schema for Cloudflare Workers apps",
   "repository": {
@@ -16,7 +16,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+
     "typecheck": "nuxt typecheck",
     "prelint": "test -f .nuxt/eslint.config.mjs || nuxt prepare",
     "lint": "eslint .",
@@ -62,6 +62,15 @@
   "overrides": {
     "@cloudflare/unenv-preset": "2.12.1",
     "vite": "npm:rolldown-vite@latest"
+  },
+  "exports": {
+    ".": {
+      "import": "./nuxt.config.ts"
+    },
+    "./server/database/schema": {
+      "import": "./server/database/schema.ts"
+    },
+    "./drizzle/*": "./drizzle/*"
   },
   "files": [
     "app/",
