@@ -142,9 +142,9 @@ These are opt-in feature recipes. Follow them when the project needs a specific 
 
 1. Run the mass-replacer script from the root directory:
    ```bash
-   npm run init -- --name="your-app-name" --display="Your Display Name" --url="https://yoururl.com"
+   pnpm setup -- --name="your-app-name" --display="Your Display Name" --url="https://yoururl.com"
    ```
-   _(This will rename the project, create the Cloudflare D1 database, spin up the Doppler project, rewrite `wrangler.json`, and then self-destruct.)_
+   _(This will rename the project, create the Cloudflare D1 database, spin up the Doppler project, and rewrite `wrangler.json`.)_
 2. Configure your Doppler secrets (see Secrets & Env below).
 3. Pull Doppler secrets and initialize the local database schema (non-interactive):
    ```bash

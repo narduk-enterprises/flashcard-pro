@@ -10,10 +10,10 @@ import { fileURLToPath } from 'node:url'
  * Safe to re-run — all steps check for existing state before making changes.
  * 
  * Usage:
- *   npm run init -- --name="my-app" --display="My App Name" --url="https://myapp.com"
+ *   pnpm setup -- --name="my-app" --display="My App Name" --url="https://myapp.com"
  * 
  * Re-run (repair mode — skip string replacement and README):
- *   npm run init -- --name="my-app" --display="My App Name" --url="https://myapp.com" --repair
+ *   pnpm setup -- --name="my-app" --display="My App Name" --url="https://myapp.com" --repair
  * 
  * What this does:
  * 1. Safely finds and replaces all boilerplate strings (skipped in --repair mode)
@@ -44,10 +44,10 @@ if (missingArgs.length > 0) {
   console.error('❌ Missing arguments!')
   console.error()
   console.error('Usage example:')
-  console.error('  npm run init -- --name="narduk-enterprises" --display="Narduk Enterprises" --url="https://nard.uk"')
+  console.error('  pnpm setup -- --name="narduk-enterprises" --display="Narduk Enterprises" --url="https://nard.uk"')
   console.error()
   console.error('Re-run (repair infra only):')
-  console.error('  npm run init -- --name="narduk-enterprises" --display="Narduk Enterprises" --url="https://nard.uk" --repair')
+  console.error('  pnpm setup -- --name="narduk-enterprises" --display="Narduk Enterprises" --url="https://nard.uk" --repair')
   console.error()
   console.error('Please provide: --name, --display, and --url')
   process.exit(1)
@@ -158,32 +158,40 @@ async function main() {
   /**
    * Provision a D1 database by name. Returns the database_id or null on failure.
    * Safe to call multiple times — skips if the database already exists.
+   * Uses `wrangler d1 info --json` for reliable ID parsing (avoids brittle regex on table output).
    */
   function provisionD1(name: string): string | null {
-    console.log(`  Running: npx wrangler d1 create ${name}`)
-    let output = ''
+    // Try to create first
     try {
-      output = execSync(`npx wrangler d1 create ${name}`, { encoding: 'utf-8', stdio: 'pipe' })
+      console.log(`  Running: npx wrangler d1 create ${name}`)
+      execSync(`npx wrangler d1 create ${name}`, { encoding: 'utf-8', stdio: 'pipe' })
       console.log(`  ✅ Database created: ${name}`)
     } catch (error: any) {
       const stderr = error.stderr || ''
-      if (stderr.includes('already exists')) {
-        console.log(`  ⏭ Database ${name} already exists.`)
-        try {
-          output = execSync(`npx wrangler d1 info ${name}`, { encoding: 'utf-8', stdio: 'pipe' })
-        } catch (e: any) {
-          console.error(`  ❌ Failed to fetch info for existing DB ${name}: ${e.message}`)
-          return null
-        }
-      } else {
+      if (!stderr.includes('already exists')) {
         console.error(`  ❌ D1 creation failed for ${name}: ${stderr || error.message}`)
         console.error('  Are you logged into Wrangler? (npx wrangler login)')
         return null
       }
+      console.log(`  ⏭ Database ${name} already exists.`)
     }
-    // Match both key=value format and wrangler table format (│ DB │ uuid │)
-    const match = output.match(/database_id[=:]\s*"?([a-fA-F0-9-]+)"?/) || output.match(/│\s*DB\s*│\s*([a-fA-F0-9-]+)\s*│/)
-    return match ? match[1] : null
+
+    // Always fetch the ID via --json for reliable parsing
+    try {
+      const infoOutput = execSync(`npx wrangler d1 info ${name} --json`, {
+        encoding: 'utf-8',
+        stdio: 'pipe'
+      })
+      const info = JSON.parse(infoOutput)
+      const dbId = info.uuid || info.database_id
+      if (dbId) {
+        console.log(`  📋 Database ID: ${dbId}`)
+        return dbId
+      }
+    } catch (e: any) {
+      console.error(`  ❌ Failed to fetch DB info for ${name}: ${e.message}`)
+    }
+    return null
   }
 
   // 3. Link each app to its own dedicated D1 database
@@ -215,6 +223,9 @@ async function main() {
             console.warn(`  ⚠️ Could not provision DB for apps/${appDir} — manual update required.`)
           }
         }
+        // Remove the corrupted preview_database_id placeholder ("DB" is the binding name, not an ID).
+        // Most projects use `--remote` for preview; if a real preview DB is needed, provision it separately.
+        delete parsedWrangler.d1_databases[0].preview_database_id
       }
 
       // Only set custom domains on the primary app (web), not companion apps (examples)
