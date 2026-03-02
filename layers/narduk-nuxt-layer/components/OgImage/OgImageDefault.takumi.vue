@@ -13,10 +13,10 @@ withDefaults(defineProps<{
   /** Brand color hex — defaults to emerald. Override to match your app's primary color. */
   primaryColor?: string
 }>(), {
-  title: 'Nuxt 4 Template',
+  title: 'FlashCardPro',
   description: 'Production-ready Nuxt 4 + Cloudflare Workers',
   icon: '✨',
-  siteName: 'Nuxt 4 Demo',
+  siteName: 'FlashCardPro',
   primaryColor: '#10b981', // eslint-disable-line atx/no-inline-hex
 })
 </script>
