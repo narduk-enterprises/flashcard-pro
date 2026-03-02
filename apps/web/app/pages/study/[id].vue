@@ -93,7 +93,7 @@ async function rate(r: number) {
 
     <div v-else class="mx-auto max-w-2xl">
       <div
-        class="card-base shadow-elevated cursor-pointer select-none overflow-hidden transition-base hover:shadow-overlay"
+        class="card-base focus-glow cursor-pointer select-none overflow-hidden transition-base hover:shadow-overlay"
         style="min-height: 14rem; perspective: 1000px;"
         @click="flip"
       >
