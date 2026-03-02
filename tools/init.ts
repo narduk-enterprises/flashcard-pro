@@ -152,6 +152,35 @@ async function main() {
     // Ignore
   }
 
+  // Pre-flight check: Ensure git is initialized and remote is set properly
+  if (!REPAIR_MODE) {
+    let remotesCheck = ''
+    try {
+      remotesCheck = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' }).trim()
+      if (remotesCheck.includes('narduk-nuxt-template')) {
+        console.error('\n❌ CRITICAL: Template repository detected.')
+        console.error('You must clear the template history and link to your own repository before running setup.')
+        console.error('\nPlease run the following commands:')
+        console.error('  rm -rf .git')
+        console.error('  git init')
+        console.error('  git remote add origin git@github.com:your-username/my-app.git')
+        console.error('\nThen re-run your setup command.\n')
+        process.exit(1)
+      } else if (!remotesCheck) {
+        throw new Error('No remotes configured')
+      }
+    } catch {
+      console.error('\n❌ CRITICAL: No git repository or remote detected.')
+      console.error('You must initialize a git repository and link to your remote before running setup.')
+      console.error('This is required to properly securely bind CI tokens.')
+      console.error('\nPlease run the following commands:')
+      console.error('  git init')
+      console.error('  git remote add origin git@github.com:your-username/my-app.git')
+      console.error('\nThen re-run your setup command.\n')
+      process.exit(1)
+    }
+  }
+
   console.log(`\n🚀 Initializing: ${DISPLAY_NAME} (${APP_NAME})${REPAIR_MODE ? ' [REPAIR MODE]' : ''}`)
   
   // 1. Recursive String Replacement
