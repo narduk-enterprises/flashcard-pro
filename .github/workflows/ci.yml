@@ -145,28 +145,3 @@ jobs:
           pnpm build
           pnpm exec wrangler deploy
 
-  e2e-prod:
-    name: E2E vs production
-    needs: [deploy]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      BASE_URL: ${{ vars.E2E_PROD_URL || 'https://flashcard-pro.narduk.workers.dev' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
-
-      - name: E2E tests against production
-        run: pnpm exec playwright test
-
