@@ -1,15 +1,21 @@
+import { z } from 'zod'
 import { like, or, desc } from 'drizzle-orm'
 import { decks } from '../../database/schema'
 
+const querySchema = z.object({
+  q: z.string().optional(),
+})
+
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const q = typeof query.q === 'string' ? query.q.trim() : ''
+  const raw = getQuery(event)
+  const query = querySchema.parse(raw)
+  const q = (query.q ?? '').trim()
   const db = useDatabase(event)
   if (!q) {
     const list = await db.select().from(decks).orderBy(desc(decks.createdAt))
     return list
   }
-  const pattern = `%${q.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`
+  const pattern = `%${q.replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
   const list = await db
     .select()
     .from(decks)

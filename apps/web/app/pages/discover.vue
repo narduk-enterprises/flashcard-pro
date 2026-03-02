@@ -33,7 +33,6 @@ const { decks, pending, error } = useDiscoverDecks(search)
         size="lg"
         icon="i-lucide-search"
         class="max-w-md"
-        :ui="{ icon: { trailing: { pointer: '' } } }"
       />
     </div>
 

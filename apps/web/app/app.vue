@@ -30,9 +30,9 @@ watch(route, () => {
 <template>
   <UApp>
     <ULink to="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-100 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg">Skip to content</ULink>
-    <div class="app-shell min-h-screen flex flex-col bg-gradient-to-b from-primary-50/30 to-transparent dark:from-primary-950/20 dark:to-transparent">
+    <div class="app-shell min-h-screen flex flex-col bg-linear-to-b from-primary-50/30 to-transparent dark:from-primary-950/20 dark:to-transparent">
       <!-- Header -->
-      <header class="sticky top-0 z-50 glass border-b border-default shadow-card">
+      <div class="sticky top-0 z-50 glass border-b border-default shadow-card" role="banner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <NuxtLink to="/" class="flex items-center gap-2.5 group transition-opacity hover:opacity-90">
             <img src="/logo.png" alt="" class="size-8 rounded-xl object-cover shadow-card" width="32" height="32">
@@ -71,7 +71,7 @@ watch(route, () => {
                 size="sm"
                 variant="ghost"
                 color="neutral"
-                @click="logout().then(() => navigateTo('/'))"
+                @click="logout().then(() => { void navigateTo('/') })"
               >
                 Log out
               </UButton>
@@ -140,7 +140,7 @@ watch(route, () => {
             </template>
           </div>
         </Transition>
-      </header>
+      </div>
 
       <!-- Main -->
       <div id="main-content" class="flex-1">
