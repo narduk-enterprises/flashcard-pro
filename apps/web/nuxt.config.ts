@@ -8,6 +8,9 @@ export default defineNuxtConfig({
   // Extend the published Narduk Nuxt Layer
   extends: ['@loganrenz/narduk-nuxt-template-layer'],
 
+  // App theme (overrides layer CSS for fonts, radius, tokens)
+  css: ['~/assets/css/main.css'],
+
   // nitro-cloudflare-dev proxies D1 bindings to the local dev server
   modules: ['nitro-cloudflare-dev'],
 

@@ -14,11 +14,13 @@ useWebPageSchema({
   description: 'Add and edit cards in this deck.',
 })
 
+const { user } = useAuth()
 const { decks } = useDecks()
 const { cards, pending, refresh } = useDeckCards(deckId)
 const { addCard: addCardMutation } = useAddCard(deckId)
 
 const deck = computed(() => decks.value?.find(d => d.id === deckId.value) ?? null)
+const isOwner = computed(() => !!deck.value && !!user.value && deck.value.userId === user.value.id)
 
 const showAddCard = ref(false)
 const newFront = ref('')
@@ -79,12 +81,15 @@ function cancelAddCard() {
     </div>
 
     <template v-else-if="deck">
+      <div v-if="!isOwner" class="mb-4 rounded-lg border border-default bg-muted p-3 text-sm text-default-muted">
+        You can view this deck. Only the owner can add or edit cards.
+      </div>
       <div class="mb-4 flex items-center justify-between">
         <p class="text-default-muted text-sm">
           {{ cards?.length ?? 0 }} card{{ (cards?.length ?? 0) === 1 ? '' : 's' }}
         </p>
         <UButton
-          v-if="!showAddCard"
+          v-if="isOwner && !showAddCard"
           size="sm"
           icon="i-lucide-plus"
           color="primary"
@@ -94,7 +99,7 @@ function cancelAddCard() {
         </UButton>
       </div>
 
-      <div v-if="showAddCard" class="card-base mb-6 space-y-4 p-6">
+      <div v-if="isOwner && showAddCard" class="card-base mb-6 space-y-4 p-6">
         <h3 class="font-display font-semibold">New card</h3>
         <UFormField label="Front (Markdown supported)">
           <UTextarea v-model="newFront" placeholder="Question or term" :rows="3" />

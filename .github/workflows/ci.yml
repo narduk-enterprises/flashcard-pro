@@ -48,6 +48,8 @@ jobs:
         run: pnpm -r --if-present test:unit
 
   # ── Deploy pipeline (push to main only) ──
+  # Requires one of: DOPPLER_TOKEN (recommended) or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID
+  # in repo Settings → Secrets and variables → Actions.
 
   preflight:
     name: Preflight
@@ -119,9 +121,41 @@ jobs:
             exit 1
           fi
 
+      - name: Run D1 migrations (remote)
+        working-directory: apps/web
+        run: |
+          pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0000_initial_schema.sql
+          pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0001_flashcard_tables.sql
+          pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0002_deck_user_id.sql
+
       - name: Build & Deploy
         working-directory: apps/web
         run: |
           pnpm build
           pnpm exec wrangler deploy
+
+  e2e-prod:
+    name: E2E vs production
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_URL: ${{ vars.E2E_PROD_URL || 'https://flashcard-pro.narduk.workers.dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: E2E tests against production
+        run: pnpm exec playwright test
 

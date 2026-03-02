@@ -1,5 +1,6 @@
 export interface Deck {
   id: string
+  userId?: string | null
   name: string
   description: string
   createdAt: string

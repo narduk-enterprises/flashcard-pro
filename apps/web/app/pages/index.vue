@@ -19,6 +19,9 @@ const { decks, pending, error } = useDecks()
       description="Study or manage your flashcard decks."
     >
       <template #links>
+        <UButton to="/discover" variant="ghost" color="neutral" icon="i-lucide-compass">
+          Discover
+        </UButton>
         <UButton to="/decks/new" icon="i-lucide-plus" color="primary">
           New deck
         </UButton>
@@ -42,9 +45,10 @@ const { decks, pending, error } = useDecks()
 
     <ul v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <li
-        v-for="deck in decks"
+        v-for="(deck, i) in decks"
         :key="deck.id"
-        class="card-base flex flex-col gap-3 p-4 transition-base"
+        class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
+        :style="{ animationDelay: `${i * 60}ms` }"
       >
         <div class="min-h-0 flex-1">
           <h3 class="font-display font-semibold text-default">

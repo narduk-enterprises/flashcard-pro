@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'auth' })
+
 useSeo({
   title: 'New deck — FlashCardPro',
   description: 'Create a new flashcard deck.',
