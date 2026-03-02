@@ -27,7 +27,7 @@
 }
 
 body {
-  @apply antialiased text-gray-900 bg-white dark:text-gray-100 dark:bg-gray-900;
+  @apply antialiased text-gray-900 bg-white dark:text-slate-100 dark:bg-slate-950;
   font-family: var(--font-sans);
 }
 
@@ -98,6 +98,14 @@ h4,
 
 .dark .glass-card {
   box-shadow: var(--shadow-elevated);
+}
+
+/* ─── Signature: focus glow (study card, primary accent) ─── */
+.focus-glow {
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 24px -4px rgb(139 92 246 / 0.25);
+}
+.dark .focus-glow {
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.25), 0 0 32px -4px rgb(139 92 246 / 0.35);
 }
 
 /* ─── Animations ─── */
