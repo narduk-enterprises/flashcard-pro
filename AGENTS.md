@@ -119,6 +119,7 @@ pnpm update @loganrenz/narduk-nuxt-template-layer
 - **Use Web Crypto API** — `crypto.subtle` for all hashing (PBKDF2)
 - **Nitro preset** is `cloudflare-module` (ES Module format, V8 isolates)
 - **Drizzle ORM only** — no Prisma or other Node-dependent ORMs
+- **Drizzle `sql` gotcha** — in `sql` template literals, `${table.column}` is parameterized as a **value** (bind parameter), not a column reference. This causes silent bugs in correlated subqueries (e.g. always-zero counts). Use `Promise.all` with individual queries instead of correlated subqueries, or use Drizzle's relational query API.
 - All server code must be stateless across requests (edge isolate model)
 
 ## Security & Protection
@@ -214,6 +215,8 @@ Sitemap and robots.txt are automatic. OG image templates live in `app/components
 ## Starting a New Project from This Template
 
 Follow these steps **in order** — the init script handles renaming, D1 provisioning, and Doppler setup.
+
+> **Doppler is optional for initial setup.** Steps that require Doppler (project creation, hub secret sync, GitHub CI token, analytics) are skipped gracefully when the Doppler CLI is not installed or configured. You can complete them later by running `doppler setup` and re-running `pnpm run setup` with `--repair`.
 
 1. Clone: `git clone https://github.com/loganrenz/narduk-nuxt-template.git my-app && cd my-app`
 2. Clear the template's git history and set up your own repository (Required for GitHub CI secrets to bind properly):
@@ -318,19 +321,25 @@ These are opt-in feature recipes. Follow them when the project needs a specific 
 **When:** You have just cloned this template to begin a new application.
 **CRITICAL:** This must be your very first step before writing any code.
 
+> **Doppler-optional:** Running setup without Doppler is supported. Steps that require Doppler (project creation, hub secret sync, GitHub CI token, analytics) are skipped with a clear message. After configuring Doppler, re-run with `--repair` to complete those steps.
+
 **Steps:**
 
-1. Run the mass-replacer script from the root directory:
+1. Run the setup script from the root directory:
    ```bash
-   pnpm init -- --name="your-app-name" --display="Your Display Name" --url="https://yoururl.com"
+   pnpm run setup -- --name="your-app-name" --display="Your Display Name" --url="https://yoururl.com"
    ```
-   _(This will rename the project, create the Cloudflare D1 database, spin up the Doppler project, and rewrite `wrangler.json`.)_
+   _(This will rename the project, create the Cloudflare D1 database, spin up the Doppler project if available, and rewrite `wrangler.json`.)_
 2. Configure your Doppler secrets (see Secrets & Env below).
 3. Pull Doppler secrets and initialize the local database schema (non-interactive):
    ```bash
    doppler setup --project <app-name> --config dev && pnpm run db:migrate
    ```
-4. Commit the initialization.
+4. If setup was run without Doppler, complete the Doppler steps:
+   ```bash
+   pnpm run setup -- --name="your-app-name" --display="Your Display Name" --url="https://yoururl.com" --repair
+   ```
+5. Commit the initialization.
 
 ---
 

@@ -66,6 +66,17 @@ if (!/^[a-z0-9][a-z0-9-]*$/.test(APP_NAME)) {
   process.exit(1)
 }
 
+// Detect Doppler CLI availability
+function isDopplerAvailable(): boolean {
+  try {
+    execSync('doppler --version', { encoding: 'utf-8', stdio: 'pipe' })
+    return true
+  } catch {
+    return false
+  }
+}
+const DOPPLER_AVAILABLE = isDopplerAvailable()
+
 // Boilerplate targets to replace
 // Order matters: more-specific patterns must come before less-specific ones
 // Display name: "Nuxt 4 Demo" is the default app name in nuxt.config.ts (site.name,
@@ -338,16 +349,21 @@ async function main() {
         delete parsedWrangler.d1_databases[0].preview_database_id
       }
 
-      // Only set custom domains on the primary app (web), not companion apps (examples)
+      // Only set custom domains on the primary app (web), not companion apps (examples).
+      // Skip workers.dev subdomains — they don't support custom domains.
       if (appDir === 'web') {
         try {
           const urlObj = new URL(SITE_URL)
-          if (!parsedWrangler.routes) {
-            parsedWrangler.routes = []
-          }
-          const existingRoute = parsedWrangler.routes.find((r: any) => r.pattern === urlObj.hostname)
-          if (!existingRoute) {
-            parsedWrangler.routes.push({ pattern: urlObj.hostname, custom_domain: true })
+          if (urlObj.hostname.endsWith('.workers.dev')) {
+            console.log(`  ⏭ Skipping custom domain — ${urlObj.hostname} is a workers.dev subdomain.`)
+          } else {
+            if (!parsedWrangler.routes) {
+              parsedWrangler.routes = []
+            }
+            const existingRoute = parsedWrangler.routes.find((r: any) => r.pattern === urlObj.hostname)
+            if (!existingRoute) {
+              parsedWrangler.routes.push({ pattern: urlObj.hostname, custom_domain: true })
+            }
           }
         } catch (_e) {
           console.warn(`  ⚠️ Could not configure custom domain: Invalid SITE_URL (${SITE_URL})`)
@@ -394,162 +410,176 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
 
   // 5. Doppler Registration (additive — won't clobber existing secrets)
   console.log('\nStep 5/10: Provisioning Doppler Project...')
-  console.log(`  Running: doppler projects create ${APP_NAME}`)
-  try {
-    execSync(`doppler projects create ${APP_NAME} --description "${DISPLAY_NAME} auto-provisioned"`, { encoding: 'utf-8', stdio: 'pipe' })
-    console.log(`  ✅ Doppler project created: ${APP_NAME}`)
-  } catch (error: any) {
-    const stderr = error.stderr || ''
-    if (stderr.includes('already exists')) {
-      console.log(`  ⏭ Doppler project ${APP_NAME} already exists.`)
-    } else {
-      console.warn(`  ⚠️ Doppler creation failed: ${stderr || error.message}`)
-    }
-  }
-
-  // Only set hub references for keys that aren't already configured
-  try {
-    const existing = getDopplerSecretNames(APP_NAME, 'prd')
-    const hubSecrets: Record<string, string> = {
-      CLOUDFLARE_API_TOKEN: '${narduk-nuxt-template.prd.CLOUDFLARE_API_TOKEN}',
-      CLOUDFLARE_ACCOUNT_ID: '${narduk-nuxt-template.prd.CLOUDFLARE_ACCOUNT_ID}',
-      POSTHOG_PUBLIC_KEY: '${narduk-analytics.prd.POSTHOG_PUBLIC_KEY}',
-      POSTHOG_PROJECT_ID: '${narduk-analytics.prd.POSTHOG_PROJECT_ID}',
-      POSTHOG_HOST: '${narduk-analytics.prd.POSTHOG_HOST}',
-      APP_NAME: APP_NAME,
-      SITE_URL: SITE_URL,
-      GA_ACCOUNT_ID: '${narduk-analytics.prd.GA_ACCOUNT_ID}',
-      GSC_SERVICE_ACCOUNT_JSON: '${narduk-analytics.prd.GSC_SERVICE_ACCOUNT_JSON}'
+  if (!DOPPLER_AVAILABLE) {
+    console.log('  ⏭ Doppler CLI not configured; skipping Doppler project provisioning.')
+    console.log('     Run `doppler setup` and re-run with --repair to complete this step.')
+  } else {
+    console.log(`  Running: doppler projects create ${APP_NAME}`)
+    try {
+      execSync(`doppler projects create ${APP_NAME} --description "${DISPLAY_NAME} auto-provisioned"`, { encoding: 'utf-8', stdio: 'pipe' })
+      console.log(`  ✅ Doppler project created: ${APP_NAME}`)
+    } catch (error: any) {
+      const stderr = error.stderr || ''
+      if (stderr.includes('already exists')) {
+        console.log(`  ⏭ Doppler project ${APP_NAME} already exists.`)
+      } else {
+        console.warn(`  ⚠️ Doppler creation failed: ${stderr || error.message}`)
+      }
     }
 
-    const toSet = Object.entries(hubSecrets)
-      .filter(([key]) => !existing.has(key))
-      .map(([key, val]) => `${key}='${val}'`)
+    // Only set hub references for keys that aren't already configured
+    try {
+      const existing = getDopplerSecretNames(APP_NAME, 'prd')
+      const hubSecrets: Record<string, string> = {
+        CLOUDFLARE_API_TOKEN: '${narduk-nuxt-template.prd.CLOUDFLARE_API_TOKEN}',
+        CLOUDFLARE_ACCOUNT_ID: '${narduk-nuxt-template.prd.CLOUDFLARE_ACCOUNT_ID}',
+        POSTHOG_PUBLIC_KEY: '${narduk-analytics.prd.POSTHOG_PUBLIC_KEY}',
+        POSTHOG_PROJECT_ID: '${narduk-analytics.prd.POSTHOG_PROJECT_ID}',
+        POSTHOG_HOST: '${narduk-analytics.prd.POSTHOG_HOST}',
+        APP_NAME: APP_NAME,
+        SITE_URL: SITE_URL,
+        GA_ACCOUNT_ID: '${narduk-analytics.prd.GA_ACCOUNT_ID}',
+        GSC_SERVICE_ACCOUNT_JSON: '${narduk-analytics.prd.GSC_SERVICE_ACCOUNT_JSON}'
+      }
 
-    if (toSet.length > 0) {
-      execSync(`doppler secrets set ${toSet.join(' ')} --project ${APP_NAME} --config prd`, { stdio: 'pipe' })
-      console.log(`  ✅ Synced ${toSet.length} hub credentials: ${toSet.map(s => s.split('=')[0]).join(', ')}`)
-    } else {
-      console.log(`  ⏭ All core credentials already configured.`)
+      const toSet = Object.entries(hubSecrets)
+        .filter(([key]) => !existing.has(key))
+        .map(([key, val]) => `${key}='${val}'`)
+
+      if (toSet.length > 0) {
+        execSync(`doppler secrets set ${toSet.join(' ')} --project ${APP_NAME} --config prd`, { stdio: 'pipe' })
+        console.log(`  ✅ Synced ${toSet.length} hub credentials: ${toSet.map(s => s.split('=')[0]).join(', ')}`)
+      } else {
+        console.log(`  ⏭ All core credentials already configured.`)
+      }
+    } catch (error: any) {
+      console.warn(`  ⚠️ Failed to sync hub credentials: ${error.message}`)
     }
-  } catch (error: any) {
-    console.warn(`  ⚠️ Failed to sync hub credentials: ${error.message}`)
   }
 
   // 6. Doppler Service Token → GitHub Secret (skip if token exists)
   console.log('\nStep 6/10: Adding Doppler token to GitHub repository...')
-
-  // Pre-check: a non-template git remote must exist for gh secret set to work
-  let hasGitRemote = false
-  try {
-    const remotesCheck = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' }).trim()
-    hasGitRemote = remotesCheck.split('\n').some(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
-  } catch { /* no git or no remotes */ }
-
-  if (!hasGitRemote) {
-    console.log('  ⏭ No git remote found (expected for fresh scaffolds).')
-    console.log('    After adding a remote, re-run with --repair to set the GitHub secret.')
+  if (!DOPPLER_AVAILABLE) {
+    console.log('  ⏭ Doppler CLI not configured; skipping GitHub secret setup.')
+    console.log('     Run `doppler setup` and re-run with --repair to complete this step.')
   } else {
+    // Pre-check: a non-template git remote must exist for gh secret set to work
+    let hasGitRemote = false
     try {
-      // Check if ci-deploy token already exists
-      let tokenExists = false
+      const remotesCheck = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' }).trim()
+      hasGitRemote = remotesCheck.split('\n').some(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
+    } catch { /* no git or no remotes */ }
+
+    if (!hasGitRemote) {
+      console.log('  ⏭ No git remote found (expected for fresh scaffolds).')
+      console.log('    After adding a remote, re-run with --repair to set the GitHub secret.')
+    } else {
       try {
-        const tokensOutput = execSync(
-          `doppler configs tokens --project ${APP_NAME} --config prd --plain`,
-          { encoding: 'utf-8', stdio: 'pipe' }
-        )
-        tokenExists = tokensOutput.includes('ci-deploy')
-      } catch {
-        // If listing fails, proceed with creation attempt
-      }
-
-      if (tokenExists) {
-        console.log(`  ⏭ ci-deploy token already exists. Skipping to avoid invalidating active CI token.`)
-      } else {
-        const dopplerToken = execSync(
-          `doppler configs tokens create ci-deploy --project ${APP_NAME} --config prd --plain`,
-          { encoding: 'utf-8', stdio: 'pipe' }
-        ).trim()
-
-        if (!dopplerToken) {
-          throw new Error('Doppler returned an empty token.')
+        // Check if ci-deploy token already exists
+        let tokenExists = false
+        try {
+          const tokensOutput = execSync(
+            `doppler configs tokens --project ${APP_NAME} --config prd --plain`,
+            { encoding: 'utf-8', stdio: 'pipe' }
+          )
+          tokenExists = tokensOutput.includes('ci-deploy')
+        } catch {
+          // If listing fails, proceed with creation attempt
         }
 
-        // Automatically determine the target GitHub repository (excluding narduk-nuxt-template)
-        let targetRepoFlag = ''
-        try {
-          const remotesOutput = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' })
-          const remotes = remotesOutput.split('\n').filter(Boolean)
-          const targetRemoteLine = remotes.find(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
-          if (targetRemoteLine) {
-            let url = targetRemoteLine.split(/\s+/)[1]
-            if (url) {
-              url = url.replace(/^(https?:\/\/|git@)/, '')
-              url = url.replace(/^github\.com[:/]/, '')
-              url = url.replace(/\.git$/, '')
+        if (tokenExists) {
+          console.log(`  ⏭ ci-deploy token already exists. Skipping to avoid invalidating active CI token.`)
+        } else {
+          const dopplerToken = execSync(
+            `doppler configs tokens create ci-deploy --project ${APP_NAME} --config prd --plain`,
+            { encoding: 'utf-8', stdio: 'pipe' }
+          ).trim()
+
+          if (!dopplerToken) {
+            throw new Error('Doppler returned an empty token.')
+          }
+
+          // Automatically determine the target GitHub repository (excluding narduk-nuxt-template)
+          let targetRepoFlag = ''
+          try {
+            const remotesOutput = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' })
+            const remotes = remotesOutput.split('\n').filter(Boolean)
+            const targetRemoteLine = remotes.find(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
+            if (targetRemoteLine) {
+              let url = targetRemoteLine.split(/\s+/)[1]
               if (url) {
-                targetRepoFlag = `--repo "${url}"`
-                console.log(`  🎯 Automatically selected GitHub repository for secrets: ${url}`)
+                url = url.replace(/^(https?:\/\/|git@)/, '')
+                url = url.replace(/^github\.com[:/]/, '')
+                url = url.replace(/\.git$/, '')
+                if (url) {
+                  targetRepoFlag = `--repo "${url}"`
+                  console.log(`  🎯 Automatically selected GitHub repository for secrets: ${url}`)
+                }
               }
             }
+          } catch {
+            // Fallback to default gh cli behavior if parsing fails
           }
-        } catch {
-          // Fallback to default gh cli behavior if parsing fails
-        }
 
-        // Upload to GitHub as a repository secret via gh CLI
-        execSync(`gh secret set DOPPLER_TOKEN ${targetRepoFlag} --body "${dopplerToken}"`, { encoding: 'utf-8', stdio: 'pipe' })
-        console.log(`  ✅ DOPPLER_TOKEN set as GitHub Actions secret.`)
-      }
-    } catch (error: any) {
-      const stderr = error.stderr || error.message || ''
-      if (stderr.includes('token') && stderr.includes('already exists')) {
-        console.log(`  ⏭ Doppler CI token already exists. Skipping.`)
-      } else {
-        console.warn(`  ⚠️ Failed to set DOPPLER_TOKEN on GitHub: ${stderr}`)
-        console.warn('  Ensure you are logged into gh (gh auth login) and have a git remote set.')
+          // Upload to GitHub as a repository secret via gh CLI
+          execSync(`gh secret set DOPPLER_TOKEN ${targetRepoFlag} --body "${dopplerToken}"`, { encoding: 'utf-8', stdio: 'pipe' })
+          console.log(`  ✅ DOPPLER_TOKEN set as GitHub Actions secret.`)
+        }
+      } catch (error: any) {
+        const stderr = error.stderr || error.message || ''
+        if (stderr.includes('token') && stderr.includes('already exists')) {
+          console.log(`  ⏭ Doppler CI token already exists. Skipping.`)
+        } else {
+          console.warn(`  ⚠️ Failed to set DOPPLER_TOKEN on GitHub: ${stderr}`)
+          console.warn('  Ensure you are logged into gh (gh auth login) and have a git remote set.')
+        }
       }
     }
   }
 
   // 7. Analytics Provisioning (each service internally skips if already configured)
   console.log('\nStep 7/10: Bootstrapping Google Analytics & IndexNow...')
-  try {
-    const toolsDir = path.join(ROOT_DIR, 'tools')
-    if (await fs.stat(path.join(toolsDir, 'setup-analytics.ts')).catch(() => null)) {
-      // Pre-check: analytics setup requires these keys in Doppler.
-      // If they're not set yet, defer gracefully instead of letting the
-      // analytics script hard-exit with process.exit(1).
-      const analyticsSecrets = getDopplerSecretNames(APP_NAME, 'prd')
-      const requiredAnalyticsKeys = ['GA_ACCOUNT_ID', 'SITE_URL', 'GSC_SERVICE_ACCOUNT_JSON']
-      const missingAnalytics = requiredAnalyticsKeys.filter(k => !analyticsSecrets.has(k))
+  if (!DOPPLER_AVAILABLE) {
+    console.log('  ⏭ Doppler CLI not configured; skipping analytics provisioning.')
+    console.log('     Run `doppler setup` and re-run with --repair to complete this step.')
+  } else {
+    try {
+      const toolsDir = path.join(ROOT_DIR, 'tools')
+      if (await fs.stat(path.join(toolsDir, 'setup-analytics.ts')).catch(() => null)) {
+        // Pre-check: analytics setup requires these keys in Doppler.
+        // If they're not set yet, defer gracefully instead of letting the
+        // analytics script hard-exit with process.exit(1).
+        const analyticsSecrets = getDopplerSecretNames(APP_NAME, 'prd')
+        const requiredAnalyticsKeys = ['GA_ACCOUNT_ID', 'SITE_URL', 'GSC_SERVICE_ACCOUNT_JSON']
+        const missingAnalytics = requiredAnalyticsKeys.filter(k => !analyticsSecrets.has(k))
 
-      if (missingAnalytics.length > 0) {
-        console.log('  ⏭ Deferring analytics setup — missing Doppler secrets:')
-        missingAnalytics.forEach(k => console.log(`    • ${k}`))
-        console.log(`  Once set, run: doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`)
+        if (missingAnalytics.length > 0) {
+          console.log('  ⏭ Deferring analytics setup — missing Doppler secrets:')
+          missingAnalytics.forEach(k => console.log(`    • ${k}`))
+          console.log(`  Once set, run: doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`)
+        } else {
+          console.log('  Installing ephemeral dependencies (googleapis, google-auth-library)...')
+          execSync('pnpm add -w --save-dev googleapis google-auth-library', { encoding: 'utf-8', stdio: 'pipe' })
+          
+          console.log('  Executing Narduk Analytics provisioning pipeline...')
+          // Run against the app's own Doppler project (prd config) so SITE_URL, GSC creds,
+          // and hub references all resolve correctly. Command is `all`, not `setup:all`.
+          execSync(`doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`, {
+            stdio: 'inherit',
+            env: {
+              ...process.env,
+              APP_NAME,
+              GSC_USER_EMAIL: process.env.GSC_USER_EMAIL || ''
+            }
+          })
+          console.log(`  ✅ Analytics & Search Console setup successful.`)
+        }
       } else {
-        console.log('  Installing ephemeral dependencies (googleapis, google-auth-library)...')
-        execSync('pnpm add -w --save-dev googleapis google-auth-library', { encoding: 'utf-8', stdio: 'pipe' })
-        
-        console.log('  Executing Narduk Analytics provisioning pipeline...')
-        // Run against the app's own Doppler project (prd config) so SITE_URL, GSC creds,
-        // and hub references all resolve correctly. Command is `all`, not `setup:all`.
-        execSync(`doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`, {
-          stdio: 'inherit',
-          env: {
-            ...process.env,
-            APP_NAME,
-            GSC_USER_EMAIL: process.env.GSC_USER_EMAIL || ''
-          }
-        })
-        console.log(`  ✅ Analytics & Search Console setup successful.`)
+        console.log('  ⚠️ tools/setup-analytics.ts missing. Skipping analytics.')
       }
-    } else {
-      console.log('  ⚠️ tools/setup-analytics.ts missing. Skipping analytics.')
+    } catch (error: any) {
+      console.warn(`  ⚠️ Failed to execute analytics pipeline: ${error.message}`)
     }
-  } catch (error: any) {
-    console.warn(`  ⚠️ Failed to execute analytics pipeline: ${error.message}`)
   }
 
   // 8. Generate Favicons for apps/web
@@ -664,10 +694,28 @@ export default defineConfig({
   console.log('  ℹ️  init.ts is kept for re-runs. Use --repair to re-run infra steps only.')
 
   console.log('\n🎉 Project initialization complete!')
-  console.log('\nNext steps:')
-  console.log(`  1. Review Doppler secrets: doppler secrets --project ${APP_NAME} --config prd`)
-  console.log(`  2. doppler setup --project ${APP_NAME} --config dev && pnpm run db:migrate`)
-  console.log(`  3. git add . && git commit -m "chore: initialize project"`)
+  if (!DOPPLER_AVAILABLE) {
+    console.log('\n⚠️  Doppler was not available — Steps 5–7 were skipped.')
+    console.log('\nNext steps:')
+    console.log('  1. Install and configure Doppler: https://docs.doppler.com/docs/install-cli')
+    console.log(`  2. doppler setup --project ${APP_NAME} --config dev`)
+    console.log(`  3. pnpm run setup -- --name="${APP_NAME}" --display="${DISPLAY_NAME}" --url="${SITE_URL}" --repair`)
+    console.log(`  4. pnpm run db:migrate`)
+    console.log(`  5. doppler run -- pnpm run dev`)
+    console.log(`  6. pnpm run validate`)
+    console.log(`  7. git add . && git commit -m "chore: initialize project"`)
+  } else {
+    console.log('\nNext steps:')
+    console.log(`  1. Review Doppler secrets: doppler secrets --project ${APP_NAME} --config prd`)
+    console.log(`  2. Wire Doppler locally: doppler setup --project ${APP_NAME} --config dev`)
+    console.log(`  3. Run database migration: pnpm run db:migrate`)
+    console.log(`  4. Start dev server: doppler run -- pnpm run dev`)
+    console.log(`  5. Verify infrastructure: pnpm run validate`)
+    console.log(`  6. git add . && git commit -m "chore: initialize project"`)
+    console.log()
+    console.log('  💡 If analytics setup was deferred (missing Doppler secrets), run it later:')
+    console.log(`     doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`)
+  }
   console.log()
 }
 

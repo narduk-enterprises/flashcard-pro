@@ -18,6 +18,9 @@ import noMapAsyncInServer from './rules/no-map-async-in-server'
 import noRawFetchInStores from './rules/no-raw-fetch-in-stores'
 import pluginSuffixForBrowserApis from './rules/plugin-suffix-for-browser-apis'
 import noNonSerializableStoreState from './rules/no-non-serializable-store-state'
+import requireCsrfHeaderOnMutations from './rules/require-csrf-header-on-mutations'
+import noCsrfExemptRouteMisuse from './rules/no-csrf-exempt-route-misuse'
+import noFetchCreateBypass from './rules/no-fetch-create-bypass'
 
 export default {
   meta: {
@@ -41,6 +44,9 @@ export default {
     'no-raw-fetch-in-stores': noRawFetchInStores,
     'plugin-suffix-for-browser-apis': pluginSuffixForBrowserApis,
     'no-non-serializable-store-state': noNonSerializableStoreState,
+    'require-csrf-header-on-mutations': requireCsrfHeaderOnMutations,
+    'no-csrf-exempt-route-misuse': noCsrfExemptRouteMisuse,
+    'no-fetch-create-bypass': noFetchCreateBypass,
   },
   configs: {
     recommended: {
@@ -62,6 +68,9 @@ export default {
         'nuxt-guardrails/no-raw-fetch-in-stores': 'error',
         'nuxt-guardrails/plugin-suffix-for-browser-apis': 'error',
         'nuxt-guardrails/no-non-serializable-store-state': 'warn',
+        'nuxt-guardrails/require-csrf-header-on-mutations': 'error',
+        'nuxt-guardrails/no-csrf-exempt-route-misuse': 'warn',
+        'nuxt-guardrails/no-fetch-create-bypass': 'error',
       },
     },
   },

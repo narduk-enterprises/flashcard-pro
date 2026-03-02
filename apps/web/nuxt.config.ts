@@ -1,7 +1,21 @@
+import { fileURLToPath } from 'node:url'
+import { resolve, dirname } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // Extend the published Narduk Nuxt Layer
   extends: ['@loganrenz/narduk-nuxt-template-layer'],
+
+  // nitro-cloudflare-dev proxies D1 bindings to the local dev server
+  modules: ['nitro-cloudflare-dev'],
+
+  nitro: {
+    cloudflareDev: {
+      configPath: resolve(__dirname, 'wrangler.json'),
+    },
+  },
 
   future: {
     compatibilityVersion: 4
