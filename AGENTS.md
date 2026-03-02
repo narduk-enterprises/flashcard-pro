@@ -319,6 +319,41 @@ These are opt-in feature recipes. Follow them when the project needs a specific 
 
 ---
 
+## 🧹 Recipe: Production Cleanup (Delete Examples)
+
+**When:** You are building a real application, not exploring the template. Run this after the Initialization Routine.
+
+**Steps:**
+
+1. **Delete example apps:**
+
+   ```bash
+   rm -rf apps/showcase apps/example-auth apps/example-blog apps/example-marketing apps/example-og-image apps/example-apple-maps
+   ```
+
+2. **Remove example scripts from root `package.json`:**
+   - `dev:showcase`, `dev:auth`, `dev:blog`, `dev:marketing`, `dev:og-image`, `dev:apple-maps`
+   - `db:ready:auth`, `db:migrate:auth`, `db:seed:auth`
+   - `build:showcase`, `deploy:showcase`
+   - `test:e2e:auth`, `test:e2e:blog`, `test:e2e:marketing`, `test:e2e:showcase`, `test:e2e:apple-maps`
+
+3. **Remove template-only GitHub Actions workflows:**
+   - Delete `.github/workflows/deploy-showcase.yml` (showcase deployment)
+   - Delete `.github/workflows/publish-layer.yml` (layer publishing — only needed by the template repo itself)
+   - Keep `ci.yml`, `deploy.yml`, and `version-bump.yml`
+
+4. **Update `playwright.config.ts`** at the repo root — remove example app projects, keep only `apps/web/` if you add E2E tests.
+
+5. **Update `apps/web/nuxt.config.ts`** metadata:
+   - `site.name` — change to your app's name
+   - `site.description` — change to your app's description
+   - `schemaOrg.identity.name` — match your app name
+     > _Note: If you ran `pnpm setup` with `--display`, these values were already replaced automatically._
+
+6. **Replace `apps/web/app/pages/index.vue`** — this is a placeholder landing page. Build your actual homepage.
+
+---
+
 ## 🔑 Recipe: Secrets & Environment (Doppler)
 
 **When:** Always. This is the standard for all projects.

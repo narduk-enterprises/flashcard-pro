@@ -49,7 +49,21 @@ tools/          → Init, validate, and setup scripts
 
 ## Secrets Management
 
-This project uses **Doppler** — never create `.env` files. See the [Secrets recipe in AGENTS.md](./AGENTS.md#-recipe-secrets--environment-doppler) for full details.
+This project uses **Doppler** — never create `.env` files. All example apps share a single Doppler project:
+
+| Doppler Project        | Config     | Used By        |
+| ---------------------- | ---------- | -------------- |
+| `narduk-nuxt-template` | `dev`      | Shared secrets |
+| `narduk-nuxt-template` | `dev_auth` | `example-auth` |
+
+**First-time setup for example-auth:**
+
+```bash
+cd apps/example-auth
+doppler setup --project narduk-nuxt-template --config dev_auth --no-interactive
+```
+
+See the [Secrets recipe in AGENTS.md](./AGENTS.md#-recipe-secrets--environment-doppler) for full details.
 
 ## Testing
 

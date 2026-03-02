@@ -23,7 +23,8 @@ import { fileURLToPath } from 'node:url'
  * 5. Provisions Doppler project and syncs hub secrets (additive only)
  * 6. Sets Doppler CI token on GitHub (skips if token exists)
  * 7. Runs analytics provisioning pipeline (each service skips if configured)
- * 8. Done — script is kept for future re-runs
+ * 8. Generates favicon assets for apps/web/public from source SVG
+ * 9. Done — script is kept for future re-runs
  */
 
 // --- 1. Argument Parsing ---
@@ -66,14 +67,22 @@ if (!/^[a-z0-9][a-z0-9-]*$/.test(APP_NAME)) {
 
 // Boilerplate targets to replace
 // Order matters: more-specific patterns must come before less-specific ones
-// Note: "Nuxt 4 Demo" display name is NOT replaced here — the layer reads
-// `runtimeConfig.public.appName` (set by APP_NAME env var via Doppler) at runtime.
+// Display name: "Nuxt 4 Demo" is the default app name in nuxt.config.ts (site.name,
+// schemaOrg.identity.name, runtimeConfig fallback) and generate-favicons.mjs. The layer's
+// app.vue reads runtimeConfig.public.appName at runtime, but these build-time values also
+// need to be replaced so SEO metadata matches the project from the first deploy.
 const REPLACEMENTS = [
   { from: /narduk-nuxt-template-examples-db/g, to: `${APP_NAME}-examples-db` },
   { from: /narduk-nuxt-template-examples/g, to: `${APP_NAME}-examples` },
   { from: /narduk-nuxt-template-db/g, to: `${APP_NAME}-db` },
   { from: /narduk-nuxt-template/g, to: APP_NAME },
-  { from: /https:\/\/narduk-nuxt-template\.workers\.dev/g, to: SITE_URL }
+  { from: /https:\/\/narduk-nuxt-template\.workers\.dev/g, to: SITE_URL },
+  // Display names: replace both variants so SEO metadata, OG images, and manifest
+  // all reflect the new project name from the first deploy.
+  { from: /Nuxt 4 Template/g, to: DISPLAY_NAME },
+  { from: /Nuxt 4 Demo/g, to: DISPLAY_NAME },
+  // Template-specific site description — replace with a generic one the agent can customize.
+  { from: /A production-ready demo template showcasing Nuxt 4, Nuxt UI 4, Tailwind CSS 4, and Cloudflare Workers with D1 database\./g, to: `${DISPLAY_NAME} — powered by Nuxt 4 and Cloudflare Workers.` },
 ]
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -133,9 +142,9 @@ async function main() {
   
   // 1. Recursive String Replacement
   if (REPAIR_MODE) {
-    console.log('\nStep 1/8: Replacing boilerplate strings... ⏭ skipped (--repair)')
+    console.log('\nStep 1/9: Replacing boilerplate strings... ⏭ skipped (--repair)')
   } else {
-    console.log('\nStep 1/8: Replacing boilerplate strings...')
+    console.log('\nStep 1/9: Replacing boilerplate strings...')
     const files = await walkDir(ROOT_DIR)
     let changedFiles = 0
 
@@ -177,10 +186,41 @@ async function main() {
       }
     }
     console.log(`  ✅ Updated ${changedFiles} files.`)
+
+    // Targeted .md replacement: update Doppler project names and clone URLs in
+    // CONTRIBUTING.md and example READMEs. We skip:
+    //   - AGENTS.md files (intentional template/clone safety warnings)
+    //   - Root README.md (overwritten in Step 4)
+    //   - layers/ .md files (reference the layer's published package identity)
+    //   - .agents/workflows/ .md files (instructional references to the template)
+    const mdFiles = (await walkDir(ROOT_DIR))
+      .filter(f =>
+        f.endsWith('.md')
+        && !f.endsWith('AGENTS.md')
+        && f !== path.join(ROOT_DIR, 'README.md')
+        && !f.includes(`${path.sep}layers${path.sep}`)
+        && !f.includes(`${path.sep}.agents${path.sep}`)
+      )
+    let mdChanged = 0
+    for (const file of mdFiles) {
+      const original = await fs.readFile(file, 'utf-8')
+      let content = original
+      // Replace Doppler project name and template-specific display names
+      content = content.replace(/narduk-nuxt-template/g, APP_NAME)
+      content = content.replace(/Nuxt 4 Template/g, DISPLAY_NAME)
+      content = content.replace(/Nuxt 4 Demo/g, DISPLAY_NAME)
+      if (original !== content) {
+        await fs.writeFile(file, content, 'utf-8')
+        mdChanged++
+      }
+    }
+    if (mdChanged > 0) {
+      console.log(`  ✅ Updated ${mdChanged} markdown files (Doppler refs, display names).`)
+    }
   }
 
   // 2. Database Provisioning (per-app — each app gets its own D1 database)
-  console.log('\nStep 2/8: Provisioning D1 Databases...')
+  console.log('\nStep 2/9: Provisioning D1 Databases...')
 
   /**
    * Provision a D1 database by name. Returns the database_id or null on failure.
@@ -222,7 +262,7 @@ async function main() {
   }
 
   // 3. Link each app to its own dedicated D1 database
-  console.log('\nStep 3/8: Linking Databases to wrangler.json...')
+  console.log('\nStep 3/9: Linking Databases to wrangler.json...')
   const appsDir = path.join(ROOT_DIR, 'apps')
   let appDirs: string[] = []
   try {
@@ -285,9 +325,9 @@ async function main() {
 
   // 4. Reset README
   if (REPAIR_MODE) {
-    console.log('\nStep 4/8: Resetting README.md... ⏭ skipped (--repair)')
+    console.log('\nStep 4/9: Resetting README.md... ⏭ skipped (--repair)')
   } else {
-    console.log('\nStep 4/8: Resetting README.md...')
+    console.log('\nStep 4/9: Resetting README.md...')
     const readmeContent = `# ${DISPLAY_NAME}
 
 **${APP_NAME}** — initialized from \`narduk-nuxt-template\`.
@@ -310,7 +350,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
   }
 
   // 5. Doppler Registration (additive — won't clobber existing secrets)
-  console.log('\nStep 5/8: Provisioning Doppler Project...')
+  console.log('\nStep 5/9: Provisioning Doppler Project...')
   console.log(`  Running: doppler projects create ${APP_NAME}`)
   try {
     execSync(`doppler projects create ${APP_NAME} --description "${DISPLAY_NAME} auto-provisioned"`, { encoding: 'utf-8', stdio: 'pipe' })
@@ -351,7 +391,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
   }
 
   // 6. Doppler Service Token → GitHub Secret (skip if token exists)
-  console.log('\nStep 6/8: Adding Doppler token to GitHub repository...')
+  console.log('\nStep 6/9: Adding Doppler token to GitHub repository...')
 
   // Pre-check: a non-template git remote must exist for gh secret set to work
   let hasGitRemote = false
@@ -427,7 +467,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
   }
 
   // 7. Analytics Provisioning (each service internally skips if already configured)
-  console.log('\nStep 7/8: Bootstrapping Google Analytics & IndexNow...')
+  console.log('\nStep 7/9: Bootstrapping Google Analytics & IndexNow...')
   try {
     const toolsDir = path.join(ROOT_DIR, 'tools')
     if (await fs.stat(path.join(toolsDir, 'setup-analytics.ts')).catch(() => null)) {
@@ -466,14 +506,34 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     console.warn(`  ⚠️ Failed to execute analytics pipeline: ${error.message}`)
   }
 
-  // 8. Done (script is kept for re-runs)
-  console.log('\nStep 8/8: Complete!')
+  // 8. Generate Favicons for apps/web
+  console.log('\nStep 8/9: Generating favicon assets for apps/web...')
+  try {
+    const webPublicDir = path.join(ROOT_DIR, 'apps', 'web', 'public')
+    const webFaviconSvg = path.join(webPublicDir, 'favicon.svg')
+    if (await fs.stat(webFaviconSvg).then(() => true).catch(() => false)) {
+      execSync(
+        `npx tsx tools/generate-favicons.ts --target=apps/web/public --name="${DISPLAY_NAME}" --short-name="${DISPLAY_NAME.slice(0, 12)}"`,
+        { stdio: 'inherit', cwd: ROOT_DIR }
+      )
+      console.log('  ✅ Favicon assets generated for apps/web.')
+    } else {
+      console.log('  ⏭ No favicon.svg found in apps/web/public. Skipping.')
+      console.log('    Run the /generate-branding workflow to create branding assets.')
+    }
+  } catch (error: any) {
+    console.warn(`  ⚠️ Favicon generation failed: ${error.message}`)
+    console.warn('    Run manually: pnpm generate:favicons -- --target=apps/web/public')
+  }
+
+  // 9. Done (script is kept for re-runs)
+  console.log('\nStep 9/9: Complete!')
   console.log('  ℹ️  init.ts is kept for re-runs. Use --repair to re-run infra steps only.')
 
   console.log('\n🎉 Project initialization complete!')
   console.log('\nNext steps:')
   console.log(`  1. Review Doppler secrets: doppler secrets --project ${APP_NAME} --config prd`)
-  console.log(`  2. doppler setup --project ${APP_NAME} --config dev && npm run db:migrate`)
+  console.log(`  2. doppler setup --project ${APP_NAME} --config dev && pnpm run db:migrate`)
   console.log(`  3. git add . && git commit -m "chore: initialize project"`)
   console.log()
 }

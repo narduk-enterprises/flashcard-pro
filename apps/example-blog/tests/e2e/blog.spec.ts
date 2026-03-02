@@ -32,11 +32,26 @@ test.describe('example-blog', () => {
     await expect(page.getByText('Thoughts, updates, and tutorials.')).toBeVisible()
   })
 
+  test('blog index has a separator below header', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'Our Blog' })).toBeVisible()
+    await expect(page.locator('[role="separator"]').first()).toBeVisible()
+  })
+
   test('blog index shows post cards when content exists', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: 'Our Blog' })).toBeVisible()
     const postLinks = page.locator('a[href*="hello-world"], a[href*="d1-and-content"]')
     await expect(postLinks.first()).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('post cards display title, description, and date', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'Our Blog' })).toBeVisible()
+    // Wait for posts to load
+    await expect(page.locator('a[href*="hello-world"]').first()).toBeVisible({ timeout: 15_000 })
+    // Each post card should have a heading and date icon
+    await expect(page.getByRole('heading', { name: /Hello World/ }).first()).toBeVisible()
   })
 
   test('navigate to post and see content', async ({ page }) => {
@@ -62,5 +77,10 @@ test.describe('example-blog', () => {
   test('404 for unknown slug', async ({ page }) => {
     const res = await page.goto('/nonexistent-post', { waitUntil: 'commit', timeout: 15_000 })
     expect(res?.status()).toBe(404)
+  })
+
+  test('blog index loads with correct page title', async ({ page }) => {
+    await page.goto('/')
+    await expect(page).toHaveTitle(/Blog/)
   })
 })

@@ -24,6 +24,16 @@ jobs:
       - name: Prepare Nuxt
         run: pnpm nuxt prepare
 
+      - name: Install Doppler CLI
+        if: ${{ secrets.DOPPLER_TOKEN != '' }}
+        uses: dopplerhq/cli-action@v3
+
+      - name: Fetch Doppler Secrets
+        if: ${{ secrets.DOPPLER_TOKEN != '' }}
+        run: doppler secrets download --no-file --format docker >> $GITHUB_ENV
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+
       - name: Lint
         run: pnpm lint
 
@@ -31,7 +41,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Build
-        run: pnpm build
+        run: pnpm -r build
         env:
           NITRO_PRESET: cloudflare-module
 

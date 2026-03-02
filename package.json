@@ -12,13 +12,18 @@
     "quality": "pnpm -r quality",
     "setup": "doppler run -- jiti tools/init.ts",
     "validate": "doppler run -- jiti tools/validate.ts",
+    "clean": "find . -type d \\( -name node_modules -o -name .nuxt -o -name .output -o -name .nitro -o -name .wrangler -o -name .turbo -o -name .data -o -name dist \\) -not -path './.git/*' -prune -exec rm -rf {} +",
+    "clean:install": "pnpm run clean && pnpm install && pnpm run db:ready:all",
+    "db:migrate": "pnpm --filter web run db:migrate",
     "dev:kill": "sh scripts/dev-kill.sh",
     "dev:showcase": "concurrently -n showcase,auth,blog,mkt,og,maps -c blue,green,yellow,magenta,white,gray \"pnpm --filter showcase dev\" \"sh scripts/run-dev-auth.sh\" \"pnpm --filter example-blog dev\" \"pnpm --filter example-marketing dev\" \"pnpm --filter example-og-image dev\" \"pnpm --filter example-apple-maps dev\"",
     "dev:auth": "pnpm --filter example-auth dev",
     "dev:blog": "pnpm --filter example-blog dev",
     "dev:marketing": "pnpm --filter example-marketing dev",
     "dev:og-image": "pnpm --filter example-og-image dev",
+    "db:ready:all": "pnpm run db:ready:auth && pnpm run db:ready:blog",
     "db:ready:auth": "pnpm --filter example-auth run db:ready",
+    "db:ready:blog": "pnpm --filter example-blog run db:ready",
     "db:migrate:auth": "pnpm --filter example-auth run db:migrate",
     "db:seed:auth": "pnpm --filter example-auth run db:seed",
     "build:showcase": "pnpm -r --filter 'example-*' --filter showcase build",
@@ -29,7 +34,8 @@
     "test:e2e:marketing": "pnpm --filter example-marketing test:e2e",
     "test:e2e:showcase": "pnpm --filter showcase test:e2e",
     "dev:apple-maps": "pnpm --filter example-apple-maps dev",
-    "test:e2e:apple-maps": "pnpm --filter example-apple-maps test:e2e"
+    "test:e2e:apple-maps": "pnpm --filter example-apple-maps test:e2e",
+    "generate:favicons": "npx tsx tools/generate-favicons.ts"
   },
   "pnpm": {
     "overrides": {
@@ -52,7 +58,8 @@
     "node": "22.22.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "concurrently": "^9.2.1",
-    "@playwright/test": "^1.49.0"
+    "sharp": "^0.34.5"
   }
 }

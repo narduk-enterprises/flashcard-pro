@@ -1,3 +1,5 @@
+let hmrPort = 24610
+
 export default defineNuxtConfig({
   extends: ['@loganrenz/narduk-nuxt-template-layer'],
 
@@ -7,6 +9,17 @@ export default defineNuxtConfig({
 
   devServer: {
     port: 3010,
+  },
+
+  // Unique HMR WebSocket port — avoids collisions when running all apps concurrently.
+  // Must be set via hook because Nuxt's DevServerPlugin overwrites static vite.server.hmr.
+  $development: {
+    hooks: {
+      'vite:extendConfig'(config) {
+        ;(config as any).server ??= {}
+        ;(config as any).server.hmr = { port: hmrPort++ }
+      },
+    },
   },
 
   runtimeConfig: {

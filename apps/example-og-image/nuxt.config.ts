@@ -1,3 +1,5 @@
+let hmrPort = 24650
+
 export default defineNuxtConfig({
   extends: ['@loganrenz/narduk-nuxt-template-layer'],
 
@@ -7,6 +9,15 @@ export default defineNuxtConfig({
 
   devServer: {
     port: 3015,
+  },
+
+  $development: {
+    hooks: {
+      'vite:extendConfig'(config) {
+        ;(config as any).server ??= {}
+        ;(config as any).server.hmr = { port: hmrPort++ }
+      },
+    },
   },
 
   runtimeConfig: {

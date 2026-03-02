@@ -16,6 +16,15 @@ test.describe('example-auth', () => {
     await expect(page.getByRole('heading', { name: 'Create an account' })).toBeVisible()
   })
 
+  test('index page renders hero content', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'Authentication' })).toBeVisible()
+    await expect(page.getByText('Web Crypto PBKDF2 password hashing')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Sign In' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Create Account' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Try Demo User' })).toBeVisible()
+  })
+
   test('navigation from index to login and register', async ({ page }) => {
     await page.goto('/')
     await waitForHydration(page)
@@ -28,6 +37,12 @@ test.describe('example-auth', () => {
     await page.getByRole('link', { name: 'Create Account' }).click()
     await expect(page).toHaveURL(/\/register/)
     await expect(page.getByRole('heading', { name: 'Create an account' })).toBeVisible()
+  })
+
+  test('login page shows demo account alert and demo button', async ({ page }) => {
+    await page.goto('/login')
+    await expect(page.getByText('Demo account available')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sign In as Demo User' })).toBeVisible()
   })
 
   test('login footer link goes to register', async ({ page }) => {
@@ -106,6 +121,27 @@ test.describe('example-auth', () => {
     await expect(page.getByRole('heading', { name: /Welcome/ })).toBeVisible()
   })
 
+  test('dashboard shows stats cards after login', async ({ page }) => {
+    test.setTimeout(30_000)
+    await page.goto('/login')
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Sign In as Demo User' }).click()
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+    await expect(page.getByText('Total Users')).toBeVisible()
+    await expect(page.getByText('Active Sessions')).toBeVisible()
+    await expect(page.getByText('Monthly Revenue')).toBeVisible()
+  })
+
+  test('dashboard shows recent activity after login', async ({ page }) => {
+    test.setTimeout(30_000)
+    await page.goto('/login')
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Sign In as Demo User' }).click()
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Recent Activity' })).toBeVisible()
+    await expect(page.getByText('User logged in').first()).toBeVisible()
+  })
+
   test('login with invalid credentials shows error', async ({ page }) => {
     test.setTimeout(15_000)
     await page.goto('/login')
@@ -139,5 +175,11 @@ test.describe('example-auth', () => {
     await page.getByPlaceholder('••••••••').first().fill('password456')
     await page.getByRole('button', { name: 'Create Account', exact: true }).click()
     await expect(page.getByText('already in use')).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('unauthenticated user is redirected from dashboard', async ({ page }) => {
+    await page.goto('/dashboard/')
+    await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
   })
 })

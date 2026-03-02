@@ -24,11 +24,18 @@ app/                  # All frontend code (Nuxt 4 convention)
     OgImage/          # Dynamic OG image templates (Satori)
   composables/        # Business logic + SEO helpers (useSeo, useSchemaOrg)
   pages/              # File-based routing
-  layouts/            # Page layouts (default: landing)
+  layouts/            # Page layouts (app.vue provides default shell)
   middleware/         # Route guards (empty — add as needed)
   plugins/            # Client plugins (PostHog, GA4, CSRF fetch interceptor)
   types/              # Shared TypeScript interfaces
   assets/css/main.css # Tailwind CSS 4 @theme tokens
+public/               # Default static assets (override by placing files in app's public/)
+  favicon.svg         # SVG favicon (source for generation)
+  apple-touch-icon.png # 180×180 PNG (required by Safari/iOS)
+  favicon-32x32.png   # 32×32 PNG favicon
+  favicon-16x16.png   # 16×16 PNG favicon
+  favicon.ico         # ICO fallback
+  site.webmanifest    # Web app manifest with icon references
   app.config.ts       # Nuxt UI color tokens (primary/neutral)
 server/
   api/                # Nitro endpoints (health check, IndexNow)
@@ -132,6 +139,7 @@ The following settings are provided by this layer's `nuxt.config.ts`. Downstream
 | `colorMode.preference`         | `system`                                                                |
 | `ogImage.defaults.component`   | `OgImageDefaultTakumi`                                                  |
 | `image.provider`               | `cloudflare`                                                            |
+| `app.head.link`                | Favicon SVG, PNG 32/16, apple-touch-icon, site.webmanifest              |
 | `css`                          | Layer's `app/assets/css/main.css`                                       |
 
 ## Files Provided by This Layer (DO NOT Duplicate)
@@ -145,6 +153,10 @@ The following settings are provided by this layer's `nuxt.config.ts`. Downstream
 - `app/composables/useSeo.ts`, `useSchemaOrg.ts`
 - `app/plugins/gtag.client.ts`, `posthog.client.ts`, `fetch.client.ts`
 - `app/types/api.ts`, `runtime-config.d.ts`
+
+**Public assets** (default favicons — apps override by placing their own in `public/`):
+
+- `public/favicon.svg`, `apple-touch-icon.png`, `favicon-32x32.png`, `favicon-16x16.png`, `favicon.ico`, `site.webmanifest`
 
 **Server files:**
 

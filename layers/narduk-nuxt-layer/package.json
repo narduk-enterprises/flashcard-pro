@@ -75,6 +75,7 @@
   "files": [
     "app/",
     "components/",
+    "public/",
     "server/",
     "drizzle/",
     "nuxt.config.ts",

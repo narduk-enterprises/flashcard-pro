@@ -58,6 +58,12 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
+      name: 'example-og-image',
+      testDir: 'apps/example-og-image/tests/e2e',
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3015' },
+      timeout: 30_000,
+    },
+    {
       name: 'example-apple-maps',
       testDir: 'apps/example-apple-maps/tests/e2e',
       use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3016' },

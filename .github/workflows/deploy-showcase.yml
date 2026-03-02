@@ -23,7 +23,15 @@ jobs:
       deployments: write
     strategy:
       matrix:
-        app: [showcase, example-auth, example-blog, example-marketing, example-dashboard]
+        app:
+          [
+            showcase,
+            example-auth,
+            example-blog,
+            example-marketing,
+            example-og-image,
+            example-apple-maps,
+          ]
     steps:
       - uses: actions/checkout@v4
         with:

@@ -34,15 +34,17 @@ jobs:
       - name: Sync version to all workspaces (excluding layers)
         run: |
           VERSION=$(node -p "require('./package.json').version")
+          # Layers have independent versioning (publish-layer.yml handles layer bumps).
+          # Only sync to apps/ and packages/ that actually exist.
           for pkg in apps/*/package.json packages/*/package.json; do
-            if [ -f "$pkg" ]; then
-              node -e "
-                const fs = require('fs');
-                const p = JSON.parse(fs.readFileSync('$pkg', 'utf8'));
-                p.version = '$VERSION';
-                fs.writeFileSync('$pkg', JSON.stringify(p, null, 2) + '\n');
-              "
-            fi
+            [ -f "$pkg" ] || continue
+            node -e "
+              const fs = require('fs');
+              const p = JSON.parse(fs.readFileSync('$pkg', 'utf8'));
+              if (p.private === false) return; // Skip publishable packages with own versioning
+              p.version = '$VERSION';
+              fs.writeFileSync('$pkg', JSON.stringify(p, null, 2) + '\n');
+            "
           done
 
       - name: Commit and tag

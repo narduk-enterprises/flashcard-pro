@@ -11,6 +11,8 @@ const mdcOptimizeDepsPackages = [
   'debug',
 ]
 
+let hmrPort = 24630
+
 export default defineNuxtConfig({
   extends: ['@loganrenz/narduk-nuxt-template-layer'],
 
@@ -41,6 +43,15 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       exclude: mdcOptimizeDepsPackages,
+    },
+  },
+
+  $development: {
+    hooks: {
+      'vite:extendConfig'(config) {
+        ;(config as any).server ??= {}
+        ;(config as any).server.hmr = { port: hmrPort++ }
+      },
     },
   },
 
