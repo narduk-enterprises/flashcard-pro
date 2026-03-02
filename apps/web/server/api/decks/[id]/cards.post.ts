@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { cards, decks } from '../../../database/schema'
 import { z } from 'zod'
+import { requireUser } from '../../../utils/auth'
 
 const bodySchema = z.object({
   front: z.string().min(1),
@@ -8,6 +9,7 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, message: 'Missing deck id' })
   const body = await readBody(event)
@@ -18,6 +20,9 @@ export default defineEventHandler(async (event) => {
   const db = useDatabase(event)
   const [deck] = await db.select().from(decks).where(eq(decks.id, id))
   if (!deck) throw createError({ statusCode: 404, message: 'Deck not found' })
+  if (deck.userId !== user.id) {
+    throw createError({ statusCode: 403, message: 'Only the deck owner can add cards' })
+  }
   const cardId = crypto.randomUUID()
   await db.insert(cards).values({
     id: cardId,

@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { decks } from '../../database/schema'
 import { z } from 'zod'
+import { requireUser } from '../../utils/auth'
 
 const bodySchema = z.object({
   name: z.string().min(1).max(500),
@@ -8,6 +9,7 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+  const user = await requireUser(event)
   const body = await readBody(event)
   const parsed = bodySchema.safeParse(body)
   if (!parsed.success) {
@@ -17,6 +19,7 @@ export default defineEventHandler(async (event) => {
   const id = crypto.randomUUID()
   await db.insert(decks).values({
     id,
+    userId: user.id,
     name: parsed.data.name,
     description: parsed.data.description,
   })

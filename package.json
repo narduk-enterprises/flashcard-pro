@@ -13,12 +13,13 @@
     "typecheck": "turbo run typecheck",
     "quality": "turbo run quality",
     "setup": "npx tsx tools/init.ts",
-    "validate": "doppler run -- jiti tools/validate.ts",
+    "validate": "doppler run -- npx tsx tools/validate.ts",
     "clean": "find . -type d \\( -name node_modules -o -name .nuxt -o -name .output -o -name .nitro -o -name .wrangler -o -name .turbo -o -name .data -o -name dist \\) -not -path './.git/*' -prune -exec rm -rf {} +",
     "clean:install": "pnpm run clean && pnpm install && pnpm run db:ready:all",
     "db:migrate": "pnpm --filter web run db:migrate",
     "dev:kill": "sh scripts/dev-kill.sh",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "BASE_URL=https://flashcard-pro.narduk.workers.dev playwright test",
     "generate:favicons": "npx tsx tools/generate-favicons.ts"
   },
   "pnpm": {

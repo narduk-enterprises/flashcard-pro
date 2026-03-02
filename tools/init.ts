@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url'
  * 4. Resets README.md (skipped in --repair mode)
  * 5. Provisions Doppler project and syncs hub secrets (additive only)
  * 6. Sets Doppler CI token on GitHub (skips if token exists)
+ * 6b. Configures local Doppler (doppler.yaml) so `doppler run` works without flags (skipped in CI)
  * 7. Runs analytics provisioning pipeline (each service skips if configured)
  * 8. Generates favicon assets for apps/web/public from source SVG
  * 9. Cleans up template-specific example apps and configuration.
@@ -537,6 +538,24 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     }
   }
 
+  // 6b. Local Doppler config (doppler.yaml) so `doppler run` works without --project/--config
+  if (DOPPLER_AVAILABLE && !process.env.CI) {
+    console.log('\nStep 6b/10: Configuring local Doppler (doppler.yaml)...')
+    try {
+      execSync(`doppler setup --project ${APP_NAME} --config dev`, {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+        cwd: ROOT_DIR,
+      })
+      console.log('  ✅ Local Doppler config (doppler.yaml) created. `doppler run` will use this project/config.')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.warn(`  ⚠️ Could not create doppler.yaml (run manually: doppler setup --project ${APP_NAME} --config dev): ${msg}`)
+    }
+  } else if (process.env.CI) {
+    console.log('\nStep 6b/10: Configuring local Doppler... ⏭ skipped (CI)')
+  }
+
   // 7. Analytics Provisioning (each service internally skips if already configured)
   console.log('\nStep 7/10: Bootstrapping Google Analytics & IndexNow...')
   if (!DOPPLER_AVAILABLE) {
@@ -707,7 +726,7 @@ export default defineConfig({
   } else {
     console.log('\nNext steps:')
     console.log(`  1. Review Doppler secrets: doppler secrets --project ${APP_NAME} --config prd`)
-    console.log(`  2. Wire Doppler locally: doppler setup --project ${APP_NAME} --config dev`)
+    console.log(`  2. Local Doppler is configured (doppler.yaml). If needed: doppler setup --project ${APP_NAME} --config dev`)
     console.log(`  3. Run database migration: pnpm run db:migrate`)
     console.log(`  4. Start dev server: doppler run -- pnpm run dev`)
     console.log(`  5. Verify infrastructure: pnpm run validate`)

@@ -6,12 +6,14 @@
  * tables below the re-export.
  */
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { users } from '#layer/server/database/schema'
 
 export * from '#layer/server/database/schema'
 
 // ─── Decks ──────────────────────────────────────────────────
 export const decks = sqliteTable('decks', {
   id: text('id').primaryKey(),
+  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
