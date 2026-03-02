@@ -1,7 +1,7 @@
-/* FlashCardPro theme — typography & radius overrides (@nuxt/fonts resolves Google Fonts) */
+/* FlashCardPro theme — typography & radius overrides (@nuxt/fonts resolves Google Fonts).
+   Layer already imports tailwind + @nuxt/ui; we only add @theme and utilities to avoid resolve errors in CI. */
 
 @import 'tailwindcss';
-@import '@nuxt/ui';
 
 @theme {
   /* Typography — calm, readable study aesthetic */
