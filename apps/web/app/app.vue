@@ -140,7 +140,7 @@ watch(route, () => {
             </template>
           </div>
         </Transition>
-      </div>
+      </header>
 
       <!-- Main -->
       <div id="main-content" class="flex-1">
