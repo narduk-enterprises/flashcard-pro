@@ -4,9 +4,7 @@ test.describe('Auth', () => {
   test('register creates account and redirects', async ({ page }) => {
     const email = `e2e-reg-${Date.now()}@example.com`
     await page.goto('/register')
-    await expect(
-      page.getByRole('heading', { name: /sign up/i }).or(page.getByPlaceholder('you@example.com')),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /sign up/i })).toBeVisible({ timeout: 10_000 })
     await page.getByPlaceholder('you@example.com').fill(email)
     await page.getByPlaceholder(/at least 8 characters/i).fill('e2e-password-123')
     await page.getByRole('button', { name: /sign up/i }).click()
@@ -19,9 +17,7 @@ test.describe('Auth', () => {
   test('login with valid credentials redirects to home', async ({ page }) => {
     const email = `e2e-login-${Date.now()}@example.com`
     await page.goto('/register')
-    await expect(
-      page.getByRole('heading', { name: /sign up/i }).or(page.getByPlaceholder('you@example.com')),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /sign up/i })).toBeVisible({ timeout: 10_000 })
     await page.getByPlaceholder('you@example.com').fill(email)
     await page.getByPlaceholder(/at least 8 characters/i).fill('e2e-password-123')
     await page.getByRole('button', { name: /sign up/i }).click()
@@ -45,9 +41,7 @@ test.describe('Auth', () => {
   test('logout clears session', async ({ page }) => {
     const email = `e2e-logout-${Date.now()}@example.com`
     await page.goto('/register')
-    await expect(
-      page.getByRole('heading', { name: /sign up/i }).or(page.getByPlaceholder('you@example.com')),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /sign up/i })).toBeVisible({ timeout: 10_000 })
     await page.getByPlaceholder('you@example.com').fill(email)
     await page.getByPlaceholder(/at least 8 characters/i).fill('e2e-password-123')
     await page.getByRole('button', { name: /sign up/i }).click()
