@@ -126,7 +126,18 @@ jobs:
         run: |
           pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0000_initial_schema.sql
           pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0001_flashcard_tables.sql
-          pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0002_deck_user_id.sql
+          set +e
+          out=$(pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0002_deck_user_id.sql 2>&1)
+          ret=$?
+          set -e
+          if [ $ret -ne 0 ]; then
+            if echo "$out" | grep -q "duplicate column name"; then
+              echo "Column user_id already exists (migration 0002 already applied), continuing."
+            else
+              echo "$out"
+              exit $ret
+            fi
+          fi
 
       - name: Build & Deploy
         working-directory: apps/web
