@@ -56,7 +56,7 @@ async function onSubmit() {
       <UFormField label="Password" name="password" required>
         <UInput v-model="state.password" type="password" placeholder="••••••••" size="lg" />
       </UFormField>
-      <p v-if="error" class="text-sm text-red-500 dark:text-red-400">
+      <p v-if="error" class="text-sm text-muted">
         {{ error }}
       </p>
       <div class="flex flex-col gap-2">

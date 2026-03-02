@@ -23,13 +23,14 @@ function b64ToU8(b64: string): Uint8Array {
 
 function u8ToB64(u8: Uint8Array): string {
   let bin = ''
-  for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i])
+  for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]!)
   return btoa(bin)
 }
 
 /** Hash password with PBKDF2-SHA256; returns "iterations:salt:hash" for storage. */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16))
+  const saltArr = new Uint8Array(16)
+  crypto.getRandomValues(saltArr)
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(password),
@@ -40,22 +41,25 @@ export async function hashPassword(password: string): Promise<string> {
   const derived = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
-      salt,
+      salt: saltArr as BufferSource,
       iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256',
     },
     keyMaterial,
     256,
   )
-  return `${PBKDF2_ITERATIONS}:${u8ToB64(salt)}:${u8ToB64(new Uint8Array(derived))}`
+  return `${PBKDF2_ITERATIONS}:${u8ToB64(saltArr)}:${u8ToB64(new Uint8Array(derived))}`
 }
 
 /** Verify password against stored "iterations:salt:hash" string. */
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const parts = stored.split(':')
   if (parts.length !== 3) return false
-  const [iterStr, saltB64, hashB64] = parts
-  const iterations = Number.parseInt(iterStr, 10)
+  const iterStr = parts[0]
+  const saltB64 = parts[1]
+  const hashB64 = parts[2]
+  if (saltB64 === undefined || hashB64 === undefined) return false
+  const iterations = Number.parseInt(iterStr ?? '0', 10)
   if (!Number.isFinite(iterations) || iterations < 1) return false
   const salt = b64ToU8(saltB64)
   const expected = b64ToU8(hashB64)
@@ -67,14 +71,14 @@ export async function verifyPassword(password: string, stored: string): Promise<
     ['deriveBits'],
   )
   const derived = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations, hash: 'SHA-256' },
     keyMaterial,
     256,
   )
   const actual = new Uint8Array(derived)
   if (actual.length !== expected.length) return false
   let diff = 0
-  for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i]
+  for (let i = 0; i < actual.length; i++) diff |= (actual[i] ?? 0) ^ (expected[i] ?? 0)
   return diff === 0
 }
 
@@ -93,7 +97,7 @@ export async function createSession(event: H3Event, userId: string): Promise<Aut
   })
   setCookie(event, SESSION_COOKIE, id, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: import.meta.dev ? false : true,
     sameSite: 'lax',
     path: '/',
     maxAge: Math.floor(SESSION_AGE_MS / 1000),

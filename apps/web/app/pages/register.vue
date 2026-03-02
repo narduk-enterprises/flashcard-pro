@@ -63,7 +63,7 @@ async function onSubmit() {
       <UFormField label="Name (optional)" name="name">
         <UInput v-model="state.name" placeholder="Your name" size="lg" />
       </UFormField>
-      <p v-if="error" class="text-sm text-red-500 dark:text-red-400">
+      <p v-if="error" class="text-sm text-muted">
         {{ error }}
       </p>
       <div class="flex flex-col gap-2">
