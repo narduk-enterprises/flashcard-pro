@@ -9,34 +9,59 @@ on:
       - 'layers/narduk-nuxt-layer/**'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: deploy-showcase-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   NUXT_TELEMETRY_DISABLED: 1
 
 jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      method: ${{ steps.creds.outputs.method }}
+    steps:
+      - name: Validate deployment credentials
+        id: creds
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          CF_API: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$DOPPLER_TOKEN" ]; then
+            echo "method=doppler" >> "$GITHUB_OUTPUT"
+            echo "✓ Using Doppler (hub-and-spoke) for secret resolution"
+          elif [ -n "$CF_API" ] && [ -n "$CF_ACCOUNT" ]; then
+            echo "method=direct" >> "$GITHUB_OUTPUT"
+            echo "✓ Using direct Cloudflare credentials"
+          else
+            echo "::error::No deployment credentials configured."
+            echo "Set DOPPLER_TOKEN (recommended) or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID."
+            exit 1
+          fi
+
   deploy:
+    name: Deploy ${{ matrix.app }}
+    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
       deployments: write
     strategy:
+      fail-fast: false
       matrix:
         app:
-          [
-            showcase,
-            example-auth,
-            example-blog,
-            example-marketing,
-            example-og-image,
-            example-apple-maps,
-          ]
+          - showcase
+          - example-auth
+          - example-blog
+          - example-marketing
+          - example-og-image
+          - example-apple-maps
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
 
@@ -47,46 +72,32 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Check Doppler Token
-        id: check_doppler
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-        run: |
-          if [ -n "$DOPPLER_TOKEN" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Fetch Doppler Secrets
-        if: steps.check_doppler.outputs.has_token == 'true'
+      - name: Fetch secrets from Doppler
+        if: needs.preflight.outputs.method == 'doppler'
         uses: dopplerhq/secrets-fetch-action@v1.3.1
         with:
           doppler-token: ${{ secrets.DOPPLER_TOKEN }}
           inject-env-vars: true
 
-      - name: Prepare Cloudflare Tokens
+      - name: Set direct Cloudflare credentials
+        if: needs.preflight.outputs.method == 'direct'
         env:
-          FALLBACK_API: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          FALLBACK_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_API: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] && [ -n "$FALLBACK_API" ]; then
-            echo "CLOUDFLARE_API_TOKEN=$FALLBACK_API" >> "$GITHUB_ENV"
-            export CLOUDFLARE_API_TOKEN=$FALLBACK_API
-          fi
+          echo "CLOUDFLARE_API_TOKEN=$CF_API" >> "$GITHUB_ENV"
+          echo "CLOUDFLARE_ACCOUNT_ID=$CF_ACCOUNT" >> "$GITHUB_ENV"
 
-          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$FALLBACK_ACCOUNT" ]; then
-            echo "CLOUDFLARE_ACCOUNT_ID=$FALLBACK_ACCOUNT" >> "$GITHUB_ENV"
-            export CLOUDFLARE_ACCOUNT_ID=$FALLBACK_ACCOUNT
-          fi
-
-          if { [ -z "$CLOUDFLARE_API_TOKEN" ] && [ -z "$FALLBACK_API" ]; } || \
-             { [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && [ -z "$FALLBACK_ACCOUNT" ]; }; then
-            echo "Error: CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is completely missing."
+      - name: Validate Cloudflare credentials
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Cloudflare credentials missing after secret resolution."
+            echo "If using Doppler, ensure hub references exist in the spoke project (prd config)."
             exit 1
           fi
+          echo "✓ Cloudflare credentials validated"
 
-      - name: Build and Deploy ${{ matrix.app }}
+      - name: Build & Deploy
         working-directory: apps/${{ matrix.app }}
         run: |
           pnpm build

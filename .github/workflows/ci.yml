@@ -14,81 +14,62 @@ env:
   NUXT_TELEMETRY_DISABLED: 1
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            layers/*/node_modules
-            packages/*/node_modules
-          key: deps-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install Dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: pnpm install --frozen-lockfile
-
   quality:
-    needs: setup
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - name: Restore node_modules
-        uses: actions/cache/restore@v4
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            layers/*/node_modules
-            packages/*/node_modules
-          key: deps-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Prepare Nuxt
-        run: pnpm nuxt prepare
-      - name: Lint and Typecheck
+          path: node_modules/.cache/turbo
+          key: turbo-quality-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-quality-${{ runner.os }}-
+
+      - name: Prepare Nuxt types
+        run: |
+          for cfg in apps/*/nuxt.config.ts layers/*/nuxt.config.ts; do
+            [ -f "$cfg" ] || continue
+            dir="$(dirname "$cfg")"
+            echo "::group::nuxt prepare — $dir"
+            (cd "$dir" && pnpm exec nuxt prepare)
+            echo "::endgroup::"
+          done
+
+      - name: Lint & Typecheck
         run: pnpm quality
+
       - name: Unit Tests
         run: pnpm -r test:unit --if-present
 
   build:
-    needs: setup
+    name: Build (${{ matrix.app }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         app:
-          [
-            web,
-            showcase,
-            example-auth,
-            example-blog,
-            example-marketing,
-            example-og-image,
-            example-apple-maps,
-          ]
+          - web
+          - showcase
+          - example-auth
+          - example-blog
+          - example-marketing
+          - example-og-image
+          - example-apple-maps
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
 
@@ -97,35 +78,16 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Restore node_modules
-        uses: actions/cache/restore@v4
+      - run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            layers/*/node_modules
-            packages/*/node_modules
-          key: deps-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          path: node_modules/.cache/turbo
+          key: turbo-build-${{ matrix.app }}-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-build-${{ matrix.app }}-${{ runner.os }}-
 
-      - name: Check Doppler Token
-        id: check_doppler
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-        run: |
-          if [ -n "$DOPPLER_TOKEN" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Fetch Doppler Secrets
-        if: steps.check_doppler.outputs.has_token == 'true'
-        uses: dopplerhq/secrets-fetch-action@v1.3.1
-        with:
-          doppler-token: ${{ secrets.DOPPLER_TOKEN }}
-          inject-env-vars: true
-
-      - name: Build ${{ matrix.app }}
+      - name: Build
         env:
           NITRO_PRESET: cloudflare-module
-        run: turbo run build --filter=${{ matrix.app }}
+        run: pnpm exec turbo run build --filter=${{ matrix.app }}
