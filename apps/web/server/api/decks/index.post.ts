@@ -1,0 +1,25 @@
+import { eq } from 'drizzle-orm'
+import { decks } from '../../database/schema'
+import { z } from 'zod'
+
+const bodySchema = z.object({
+  name: z.string().min(1).max(500),
+  description: z.string().max(2000).optional().default(''),
+})
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const parsed = bodySchema.safeParse(body)
+  if (!parsed.success) {
+    throw createError({ statusCode: 400, message: 'Invalid body', data: parsed.error.flatten() })
+  }
+  const db = useDatabase(event)
+  const id = crypto.randomUUID()
+  await db.insert(decks).values({
+    id,
+    name: parsed.data.name,
+    description: parsed.data.description,
+  })
+  const [deck] = await db.select().from(decks).where(eq(decks.id, id))
+  return deck
+})
