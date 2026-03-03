@@ -41,6 +41,10 @@ const editError = ref('')
 // Delete card state
 const deletingCardId = ref<string | null>(null)
 
+// Feature 12: Delete confirmation dialog
+const confirmDeleteCardId = ref<string | null>(null)
+const showDeleteConfirm = ref(false)
+
 // Bulk add state
 const showBulkAdd = ref(false)
 const bulkCsv = ref('')
@@ -52,6 +56,40 @@ const exporting = ref(false)
 
 // Share state
 const linkCopied = ref(false)
+
+// Feature 11: Card search/filter
+const cardSearchQuery = ref('')
+const filteredCards = computed(() => {
+  const allCards = (cards.value ?? []) as Card[]
+  const query = cardSearchQuery.value.trim().toLowerCase()
+  if (!query) return allCards
+  return allCards.filter(c =>
+    c.front.toLowerCase().includes(query) || c.back.toLowerCase().includes(query),
+  )
+})
+
+// Feature 14: Card sorting
+const cardSortBy = ref<'newest' | 'oldest' | 'alpha'>('newest')
+const sortedFilteredCards = computed(() => {
+  const list = [...filteredCards.value]
+  if (cardSortBy.value === 'alpha') {
+    list.sort((a, b) => a.front.localeCompare(b.front))
+  } else if (cardSortBy.value === 'oldest') {
+    list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+  } else {
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }
+  return list
+})
+
+// Feature 13: Copy card to clipboard
+const copiedCardId = ref<string | null>(null)
+async function copyCardContent(card: Card) {
+  const text = `Front: ${card.front}\nBack: ${card.back}`
+  await navigator.clipboard.writeText(text)
+  copiedCardId.value = card.id
+  setTimeout(() => { copiedCardId.value = null }, 2000)
+}
 
 // Collaborator state
 const collabEmail = ref('')
@@ -141,7 +179,17 @@ async function saveEditCard() {
   }
 }
 
-async function deleteCard(cardId: string) {
+// Feature 12: Confirmation before delete
+function promptDeleteCard(cardId: string) {
+  confirmDeleteCardId.value = cardId
+  showDeleteConfirm.value = true
+}
+
+async function confirmAndDeleteCard() {
+  if (!confirmDeleteCardId.value) return
+  const cardId = confirmDeleteCardId.value
+  showDeleteConfirm.value = false
+  confirmDeleteCardId.value = null
   deletingCardId.value = cardId
   try {
     await deleteCardMutation(cardId)
@@ -251,9 +299,19 @@ async function copyShareLink() {
         You can view this deck. Only the owner can add or edit cards.
       </div>
       <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p class="text-default-muted text-sm">
-          {{ cards?.length ?? 0 }} card{{ (cards?.length ?? 0) === 1 ? '' : 's' }}
-        </p>
+        <!-- Feature 20: Deck stats -->
+        <div class="flex items-center gap-3">
+          <p class="text-default-muted text-sm">
+            {{ cards?.length ?? 0 }} card{{ (cards?.length ?? 0) === 1 ? '' : 's' }}
+          </p>
+          <!-- Feature 15: Privacy indicator -->
+          <span v-if="deck.isPublic" class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted">
+            <UIcon name="i-lucide-globe" class="size-3" /> Public
+          </span>
+          <span v-else class="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted">
+            <UIcon name="i-lucide-lock" class="size-3" /> Private
+          </span>
+        </div>
         <div v-if="isOwner" class="flex flex-wrap gap-2">
           <UButton
             v-if="!showAddCard"
@@ -285,6 +343,47 @@ async function copyShareLink() {
             Export CSV
           </UButton>
         </div>
+      </div>
+
+      <!-- Feature 11: Card search + Feature 14: Sort -->
+      <div v-if="(cards?.length ?? 0) > 0" class="mb-4 flex flex-wrap items-center gap-3">
+        <UInput
+          v-model="cardSearchQuery"
+          placeholder="Search cards..."
+          icon="i-lucide-search"
+          size="sm"
+          class="max-w-xs"
+        />
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-default-muted">Sort:</span>
+          <UButton
+            size="xs"
+            :variant="cardSortBy === 'newest' ? 'soft' : 'ghost'"
+            :color="cardSortBy === 'newest' ? 'primary' : 'neutral'"
+            @click="cardSortBy = 'newest'"
+          >
+            Newest
+          </UButton>
+          <UButton
+            size="xs"
+            :variant="cardSortBy === 'oldest' ? 'soft' : 'ghost'"
+            :color="cardSortBy === 'oldest' ? 'primary' : 'neutral'"
+            @click="cardSortBy = 'oldest'"
+          >
+            Oldest
+          </UButton>
+          <UButton
+            size="xs"
+            :variant="cardSortBy === 'alpha' ? 'soft' : 'ghost'"
+            :color="cardSortBy === 'alpha' ? 'primary' : 'neutral'"
+            @click="cardSortBy = 'alpha'"
+          >
+            A-Z
+          </UButton>
+        </div>
+        <p v-if="cardSearchQuery && filteredCards.length !== (cards?.length ?? 0)" class="text-xs text-default-muted">
+          Showing {{ filteredCards.length }} of {{ cards?.length ?? 0 }}
+        </p>
       </div>
 
       <div v-if="isOwner && showAddCard" class="card-base mb-6 space-y-4 p-6">
@@ -328,9 +427,9 @@ async function copyShareLink() {
         <p v-if="bulkError" class="text-sm text-muted">{{ bulkError }}</p>
       </div>
 
-      <ul v-if="cards?.length" class="space-y-3">
+      <ul v-if="sortedFilteredCards.length" class="space-y-3">
         <li
-          v-for="card in (cards as Card[])"
+          v-for="card in sortedFilteredCards"
           :key="card.id"
           class="card-base flex flex-col gap-2 p-4 transition-base"
         >
@@ -383,13 +482,24 @@ async function copyShareLink() {
               >
                 Edit
               </UButton>
+              <!-- Feature 13: Copy card -->
+              <UButton
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                :icon="copiedCardId === card.id ? 'i-lucide-check' : 'i-lucide-copy'"
+                @click="copyCardContent(card)"
+              >
+                {{ copiedCardId === card.id ? 'Copied!' : 'Copy' }}
+              </UButton>
+              <!-- Feature 12: Delete with confirmation -->
               <UButton
                 size="xs"
                 variant="ghost"
                 color="error"
                 icon="i-lucide-trash-2"
                 :loading="deletingCardId === card.id"
-                @click="deleteCard(card.id)"
+                @click="promptDeleteCard(card.id)"
               >
                 Delete
               </UButton>
@@ -454,5 +564,19 @@ async function copyShareLink() {
         <p v-else class="mt-2 text-sm text-default-muted">No collaborators yet.</p>
       </div>
     </template>
+
+    <!-- Feature 12: Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteConfirm" title="Delete Card" description="Are you sure you want to delete this card? This action cannot be undone.">
+      <template #body>
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" @click="showDeleteConfirm = false">
+            Cancel
+          </UButton>
+          <UButton color="error" @click="confirmAndDeleteCard">
+            Delete
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </UPage>
 </template>

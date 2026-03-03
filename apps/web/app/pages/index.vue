@@ -10,19 +10,68 @@ useWebPageSchema({
 })
 
 const { decks, pending, error } = useDecks()
-const { isLoggedIn } = useAuth()
+const { isLoggedIn, user } = useAuth()
 const { stats } = useStudyStats()
+const { isFavorited } = useFavorites()
+
+// Feature 1: Personalized greeting
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+})
+
+// Feature 3: Deck sorting
+const sortBy = ref<'name' | 'date' | 'cards'>('date')
+const sortedDecks = computed(() => {
+  if (!decks.value) return []
+  const copy = [...decks.value]
+  if (sortBy.value === 'name') {
+    copy.sort((a, b) => a.name.localeCompare(b.name))
+  } else if (sortBy.value === 'cards') {
+    copy.sort((a, b) => (b.cardCount ?? 0) - (a.cardCount ?? 0))
+  } else {
+    copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }
+  return copy
+})
+
+// Feature 4: Favorites section
+const favoritedDecks = computed(() => {
+  if (!decks.value) return []
+  return decks.value.filter(d => isFavorited(d.id))
+})
+
+// Feature 2: Quick study random deck
+function studyRandomDeck() {
+  if (!decks.value?.length) return
+  const withCards = decks.value.filter(d => (d.cardCount ?? 0) > 0)
+  if (!withCards.length) return
+  const randomDeck = withCards[Math.floor(Math.random() * withCards.length)]!
+  navigateTo(`/study/${randomDeck.id}`)
+}
 </script>
 
 <template>
   <UPage>
     <UPageHeader
-      title="Your Decks"
+      :title="isLoggedIn && user ? `${greeting}, ${user.name || user.email}` : 'Your Decks'"
       description="Study or manage your flashcard decks."
     >
       <template #links>
         <UButton to="/discover" variant="ghost" color="neutral" icon="i-lucide-compass">
           Discover
+        </UButton>
+        <!-- Feature 2: Quick study random -->
+        <UButton
+          v-if="decks?.length"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-shuffle"
+          @click="studyRandomDeck"
+        >
+          Study random
         </UButton>
         <UButton to="/decks/new" icon="i-lucide-plus" color="primary">
           New deck
@@ -65,54 +114,119 @@ const { stats } = useStudyStats()
       </UButton>
     </div>
 
-    <ul v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <li
-        v-for="(deck, i) in decks"
-        :key="deck.id"
-        class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
-        :style="{ animationDelay: `${i * 60}ms` }"
-      >
-        <div class="min-h-0 flex-1">
-          <h3 class="font-display font-semibold text-default">
-            {{ deck.name }}
-          </h3>
-          <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
-            {{ deck.description }}
-          </p>
-          <p class="mt-1 text-xs text-default-muted">
-            {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
-          </p>
-          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
-            <span
-              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
-              :key="tag"
-              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
-            >
-              {{ tag }}
-            </span>
+    <template v-else>
+      <!-- Feature 4: Favorites section -->
+      <div v-if="favoritedDecks.length" class="mb-8">
+        <h3 class="mb-3 flex items-center gap-2 font-display font-semibold text-default">
+          <UIcon name="i-lucide-heart" class="size-5 text-primary" />
+          Favorites
+        </h3>
+        <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <li
+            v-for="(deck, i) in favoritedDecks"
+            :key="deck.id"
+            class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in border-l-4 border-l-primary"
+            :style="{ animationDelay: `${i * 60}ms` }"
+          >
+            <div class="min-h-0 flex-1">
+              <h3 class="font-display font-semibold text-default">{{ deck.name }}</h3>
+              <p class="mt-1 text-xs text-default-muted">
+                {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <UButton :to="`/study/${deck.id}`" size="sm" icon="i-lucide-play" color="primary" variant="soft">
+                Study now
+              </UButton>
+              <UButton :to="`/decks/${deck.id}`" size="sm" icon="i-lucide-settings" color="neutral" variant="soft">
+                Manage
+              </UButton>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Feature 3: Sort controls -->
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="font-display font-semibold text-default">All Decks</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-default-muted">Sort:</span>
+          <UButton
+            size="xs"
+            :variant="sortBy === 'date' ? 'soft' : 'ghost'"
+            :color="sortBy === 'date' ? 'primary' : 'neutral'"
+            @click="sortBy = 'date'"
+          >
+            Newest
+          </UButton>
+          <UButton
+            size="xs"
+            :variant="sortBy === 'name' ? 'soft' : 'ghost'"
+            :color="sortBy === 'name' ? 'primary' : 'neutral'"
+            @click="sortBy = 'name'"
+          >
+            Name
+          </UButton>
+          <UButton
+            size="xs"
+            :variant="sortBy === 'cards' ? 'soft' : 'ghost'"
+            :color="sortBy === 'cards' ? 'primary' : 'neutral'"
+            @click="sortBy = 'cards'"
+          >
+            Cards
+          </UButton>
+        </div>
+      </div>
+
+      <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <li
+          v-for="(deck, i) in sortedDecks"
+          :key="deck.id"
+          class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
+          :style="{ animationDelay: `${i * 60}ms` }"
+        >
+          <div class="min-h-0 flex-1">
+            <h3 class="font-display font-semibold text-default">
+              {{ deck.name }}
+            </h3>
+            <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
+              {{ deck.description }}
+            </p>
+            <p class="mt-1 text-xs text-default-muted">
+              {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+            </p>
+            <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+              <span
+                v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+                :key="tag"
+                class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+              >
+                {{ tag }}
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            :to="`/study/${deck.id}`"
-            size="sm"
-            icon="i-lucide-play"
-            color="primary"
-            variant="soft"
-          >
-            Study now
-          </UButton>
-          <UButton
-            :to="`/decks/${deck.id}`"
-            size="sm"
-            icon="i-lucide-settings"
-            color="neutral"
-            variant="soft"
-          >
-            Manage
-          </UButton>
-        </div>
-      </li>
-    </ul>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              :to="`/study/${deck.id}`"
+              size="sm"
+              icon="i-lucide-play"
+              color="primary"
+              variant="soft"
+            >
+              Study now
+            </UButton>
+            <UButton
+              :to="`/decks/${deck.id}`"
+              size="sm"
+              icon="i-lucide-settings"
+              color="neutral"
+              variant="soft"
+            >
+              Manage
+            </UButton>
+          </div>
+        </li>
+      </ul>
+    </template>
   </UPage>
 </template>
