@@ -18,6 +18,8 @@ export default defineEventHandler(async (event) => {
       userId: decks.userId,
       name: decks.name,
       description: decks.description,
+      tags: decks.tags,
+      isPublic: decks.isPublic,
       createdAt: decks.createdAt,
       cardCount: sql<number>`count(${cards.id})`.as('card_count'),
     })

@@ -26,6 +26,7 @@ const cardList = computed(() => {
   return (cards.value ?? []) as Card[]
 })
 const reverseMode = ref(false)
+const focusMode = ref(false)
 const currentIndex = ref(0)
 const flipped = ref(false)
 const ratingInProgress = ref(false)
@@ -97,6 +98,10 @@ function toggleReverse() {
   reverseMode.value = !reverseMode.value
 }
 
+function toggleFocusMode() {
+  focusMode.value = !focusMode.value
+}
+
 const displayFront = computed(() => {
   if (!currentCard.value) return ''
   return reverseMode.value ? currentCard.value.back : currentCard.value.front
@@ -119,6 +124,10 @@ function restartSession() {
 }
 
 function onStudyKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && focusMode.value) {
+    focusMode.value = false
+    return
+  }
   if (sessionComplete.value) return
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
   if (event.key === ' ' || event.key === 'Enter') {
@@ -145,8 +154,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UPage>
+  <UPage :class="{ 'fixed inset-0 z-[100] bg-default flex flex-col items-center justify-center p-8': focusMode }">
     <UPageHeader
+      v-if="!focusMode"
       :title="deck?.name ?? 'Study'"
       :description="progressLabel"
     >
@@ -172,6 +182,14 @@ onBeforeUnmount(() => {
           @click="toggleReverse"
         >
           Reverse
+        </UButton>
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-maximize"
+          @click="toggleFocusMode"
+        >
+          Focus
         </UButton>
       </template>
     </UPageHeader>
@@ -306,6 +324,19 @@ onBeforeUnmount(() => {
           @click="rate(4)"
         >
           Easy <UKbd value="4" class="ml-1" />
+        </UButton>
+      </div>
+
+      <!-- Focus mode exit button -->
+      <div v-if="focusMode" class="mt-4 text-center">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-minimize"
+          size="sm"
+          @click="toggleFocusMode"
+        >
+          Exit focus mode <UKbd value="Esc" class="ml-1" />
         </UButton>
       </div>
     </div>

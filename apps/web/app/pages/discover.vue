@@ -13,6 +13,7 @@ const search = ref('')
 const { decks, pending, error } = useDiscoverDecks(search)
 const { isLoggedIn } = useAuth()
 const { cloneDeck } = useCloneDeck()
+const { addFavorite, removeFavorite, isFavorited } = useFavorites()
 const cloningDeckId = ref<string | null>(null)
 
 async function handleClone(deckId: string) {
@@ -22,6 +23,14 @@ async function handleClone(deckId: string) {
     await navigateTo(`/decks/${cloned.id}`)
   } finally {
     cloningDeckId.value = null
+  }
+}
+
+async function toggleFavorite(deckId: string) {
+  if (isFavorited(deckId)) {
+    await removeFavorite(deckId)
+  } else {
+    await addFavorite(deckId)
   }
 }
 </script>
@@ -83,6 +92,15 @@ async function handleClone(deckId: string) {
           <p class="mt-1 text-xs text-default-muted">
             {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
           </p>
+          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+            <span
+              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+              :key="tag"
+              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -113,6 +131,16 @@ async function handleClone(deckId: string) {
             @click="handleClone(deck.id)"
           >
             Clone
+          </UButton>
+          <UButton
+            v-if="isLoggedIn"
+            size="sm"
+            :icon="isFavorited(deck.id) ? 'i-lucide-heart' : 'i-lucide-heart'"
+            :color="isFavorited(deck.id) ? 'primary' : 'neutral'"
+            :variant="isFavorited(deck.id) ? 'soft' : 'ghost'"
+            @click="toggleFavorite(deck.id)"
+          >
+            {{ isFavorited(deck.id) ? 'Saved' : 'Save' }}
           </UButton>
         </div>
       </li>

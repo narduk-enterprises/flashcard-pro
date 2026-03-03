@@ -50,6 +50,36 @@ const bulkError = ref('')
 // Export state
 const exporting = ref(false)
 
+// Share state
+const linkCopied = ref(false)
+
+// Collaborator state
+const collabEmail = ref('')
+const collabSubmitting = ref(false)
+const collabError = ref('')
+const { collaborators: collabs, refresh: refreshCollabs, addCollaborator: addCollabMutation } = useCollaborators(deckId)
+
+async function addCollaborator() {
+  if (!collabEmail.value.trim()) {
+    collabError.value = 'Email is required.'
+    return
+  }
+  collabError.value = ''
+  collabSubmitting.value = true
+  try {
+    await addCollabMutation(collabEmail.value.trim())
+    collabEmail.value = ''
+    await refreshCollabs()
+  } catch (e: unknown) {
+    const msg = e && typeof e === 'object' && 'data' in e && e.data && typeof (e.data as { message?: string }).message === 'string'
+      ? (e.data as { message: string }).message
+      : 'Failed to add collaborator.'
+    collabError.value = msg
+  } finally {
+    collabSubmitting.value = false
+  }
+}
+
 async function addCard() {
   if (!newFront.value.trim() || !newBack.value.trim()) {
     addError.value = 'Front and back are required.'
@@ -169,6 +199,13 @@ function exportDeck() {
   link.click()
   setTimeout(() => { exporting.value = false }, 1000)
 }
+
+async function copyShareLink() {
+  const url = `${window.location.origin}/study/${deckId.value}`
+  await navigator.clipboard.writeText(url)
+  linkCopied.value = true
+  setTimeout(() => { linkCopied.value = false }, 2000)
+}
 </script>
 
 <template>
@@ -188,6 +225,15 @@ function exportDeck() {
           color="primary"
         >
           Study now
+        </UButton>
+        <UButton
+          v-if="deck"
+          variant="ghost"
+          color="neutral"
+          :icon="linkCopied ? 'i-lucide-check' : 'i-lucide-share-2'"
+          @click="copyShareLink"
+        >
+          {{ linkCopied ? 'Copied!' : 'Share' }}
         </UButton>
       </template>
     </UPageHeader>
@@ -364,6 +410,45 @@ function exportDeck() {
         >
           Add first card
         </UButton>
+      </div>
+
+      <!-- Collaborators Section -->
+      <div v-if="isOwner" class="mt-8">
+        <USeparator />
+        <h3 class="mt-6 font-display font-semibold text-default">Collaborators</h3>
+        <p class="mt-1 text-sm text-default-muted">
+          Invite other users by email to add cards to this deck.
+        </p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <UInput
+            v-model="collabEmail"
+            placeholder="user@example.com"
+            size="sm"
+            class="max-w-xs"
+          />
+          <UButton
+            size="sm"
+            icon="i-lucide-user-plus"
+            color="primary"
+            :loading="collabSubmitting"
+            @click="addCollaborator"
+          >
+            Add
+          </UButton>
+        </div>
+        <p v-if="collabError" class="mt-1 text-sm text-muted">{{ collabError }}</p>
+        <ul v-if="collabs?.length" class="mt-3 space-y-1">
+          <li
+            v-for="collab in collabs"
+            :key="collab.id"
+            class="flex items-center gap-2 rounded-lg border border-default px-3 py-2 text-sm"
+          >
+            <UIcon name="i-lucide-user" class="size-4 text-default-muted" />
+            <span class="text-default">{{ collab.email }}</span>
+            <span v-if="collab.name" class="text-default-muted">({{ collab.name }})</span>
+          </li>
+        </ul>
+        <p v-else class="mt-2 text-sm text-default-muted">No collaborators yet.</p>
       </div>
     </template>
   </UPage>

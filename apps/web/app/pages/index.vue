@@ -82,6 +82,15 @@ const { stats } = useStudyStats()
           <p class="mt-1 text-xs text-default-muted">
             {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
           </p>
+          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+            <span
+              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+              :key="tag"
+              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2">
           <UButton
