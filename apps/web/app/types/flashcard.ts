@@ -3,6 +3,8 @@ export interface Deck {
   userId?: string | null
   name: string
   description: string
+  tags?: string
+  isPublic?: boolean
   createdAt: string
   cardCount?: number
 }

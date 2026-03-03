@@ -3,11 +3,17 @@ const route = useRoute()
 const colorMode = useColorMode()
 const appName = useRuntimeConfig().public.appName || ''
 const { user, isLoggedIn, logout } = useAuth()
+const { locale, setLocale, availableLocales } = useI18n()
 const isLoggingOut = ref(false)
 const commandOpen = ref(false)
 const commandQuery = ref('')
 
 const appDisplayName = computed(() => appName || 'FlashCardPro')
+
+function cycleLocale() {
+  const idx = availableLocales.indexOf(locale.value)
+  setLocale(availableLocales[(idx + 1) % availableLocales.length]!)
+}
 
 const colorModeIcon = computed(() => {
   if (colorMode.preference === 'system') return 'i-lucide-monitor'
@@ -180,6 +186,15 @@ async function handleLogout() {
               aria-label="Toggle color mode"
               @click="cycleColorMode"
             />
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-languages"
+              :aria-label="`Language: ${locale.toUpperCase()}`"
+              @click="cycleLocale"
+            >
+              <span class="text-xs font-medium uppercase">{{ locale }}</span>
+            </UButton>
             <UButton
               color="neutral"
               variant="ghost"

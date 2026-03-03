@@ -10,7 +10,7 @@ useWebPageSchema({
   description: 'Create a new flashcard deck.',
 })
 
-const state = reactive({ name: '', description: '' })
+const state = reactive({ name: '', description: '', tags: '' })
 const submitting = ref(false)
 const error = ref('')
 const { createDeck } = useCreateDeck()
@@ -23,7 +23,7 @@ async function submit() {
   error.value = ''
   submitting.value = true
   try {
-    const deck = await createDeck({ name: state.name, description: state.description })
+    const deck = await createDeck({ name: state.name, description: state.description, tags: state.tags })
     await navigateTo(`/decks/${deck.id}`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to create deck.'
@@ -49,6 +49,9 @@ async function submit() {
       </UFormField>
       <UFormField label="Description" name="description">
         <UTextarea v-model="state.description" placeholder="Optional description" :rows="2" />
+      </UFormField>
+      <UFormField label="Tags" name="tags" description="Comma-separated tags (e.g. spanish, verbs, language)">
+        <UInput v-model="state.tags" placeholder="e.g. spanish, verbs, language" />
       </UFormField>
       <p v-if="error" class="text-sm text-muted">
         {{ error }}
