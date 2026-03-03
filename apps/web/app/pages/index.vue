@@ -102,17 +102,17 @@ function studyRandomDeck() {
         <p class="text-xs text-default-muted">Decks</p>
       </div>
       <div class="card-base stat-accent p-4 text-center">
-        <UIcon name="i-lucide-square-stack" class="mx-auto mb-2 size-5 text-blue-500" />
+        <UIcon name="i-lucide-square-stack" class="mx-auto mb-2 size-5 text-primary" />
         <p class="text-2xl font-bold text-default">{{ stats.totalCards }}</p>
         <p class="text-xs text-default-muted">Cards</p>
       </div>
       <div class="card-base stat-accent p-4 text-center">
-        <UIcon name="i-lucide-repeat" class="mx-auto mb-2 size-5 text-green-500" />
+        <UIcon name="i-lucide-repeat" class="mx-auto mb-2 size-5 text-success" />
         <p class="text-2xl font-bold text-default">{{ stats.totalReviews }}</p>
         <p class="text-xs text-default-muted">Reviews</p>
       </div>
       <div class="card-base stat-accent p-4 text-center">
-        <UIcon name="i-lucide-star" class="mx-auto mb-2 size-5 text-amber-500" />
+        <UIcon name="i-lucide-star" class="mx-auto mb-2 size-5 text-warning" />
         <p class="text-2xl font-bold text-default">{{ stats.averageRating }}</p>
         <p class="text-xs text-default-muted">Avg Rating</p>
       </div>

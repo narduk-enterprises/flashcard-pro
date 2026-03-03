@@ -173,6 +173,7 @@ const scoreLabel = computed(() => {
 })
 
 // Confetti colors
+// eslint-disable-next-line atx/no-inline-hex
 const confettiColors = ['#8B5CF6', '#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#6366F1', '#14B8A6']
 
 function getConfettiStyle(n: number) {
@@ -341,7 +342,7 @@ onBeforeUnmount(() => {
       class="absolute inset-0 -z-10"
       aria-hidden="true"
     >
-      <div class="absolute inset-0 bg-gray-950" />
+      <div class="absolute inset-0 bg-default opacity-90" />
       <div class="absolute inset-0 opacity-30" style="background: radial-gradient(ellipse at 30% 20%, rgb(139 92 246 / 0.3), transparent 60%), radial-gradient(ellipse at 70% 80%, rgb(59 130 246 / 0.2), transparent 60%);" />
     </div>
 
@@ -418,13 +419,14 @@ onBeforeUnmount(() => {
 
         <!-- Score Ring -->
         <div class="mx-auto mb-6 relative" style="width: 140px; height: 140px;">
+          <!-- eslint-disable-next-line atx/no-inline-svg -->
           <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
             <!-- Background ring -->
             <circle
               cx="50" cy="50" r="45"
               fill="none"
               stroke="currentColor"
-              class="text-gray-200 dark:text-gray-700"
+              class="text-muted"
               stroke-width="6"
             />
             <!-- Score ring -->
@@ -453,32 +455,32 @@ onBeforeUnmount(() => {
 
         <!-- Stats Grid -->
         <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-red-500">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-red-500/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-rotate-ccw" class="size-4 text-red-500" />
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-error">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-error/10 rounded-full px-2.5 py-1">
+              <UIcon name="i-lucide-rotate-ccw" class="size-4 text-error" />
             </div>
-            <p class="text-3xl font-display font-bold text-red-500 mt-2">{{ sessionStats.again }}</p>
+            <p class="text-3xl font-display font-bold text-error mt-2">{{ sessionStats.again }}</p>
             <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Again</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-amber-500">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-amber-500/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-alert-triangle" class="size-4 text-amber-500" />
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-warning">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-warning/10 rounded-full px-2.5 py-1">
+              <UIcon name="i-lucide-alert-triangle" class="size-4 text-warning" />
             </div>
-            <p class="text-3xl font-display font-bold text-amber-500 mt-2">{{ sessionStats.hard }}</p>
+            <p class="text-3xl font-display font-bold text-warning mt-2">{{ sessionStats.hard }}</p>
             <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Hard</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-blue-500">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-blue-500/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-check" class="size-4 text-blue-500" />
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-primary">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-primary/10 rounded-full px-2.5 py-1">
+              <UIcon name="i-lucide-check" class="size-4 text-primary" />
             </div>
-            <p class="text-3xl font-display font-bold text-blue-500 mt-2">{{ sessionStats.good }}</p>
+            <p class="text-3xl font-display font-bold text-primary mt-2">{{ sessionStats.good }}</p>
             <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Good</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-green-500">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-green-500/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-zap" class="size-4 text-green-500" />
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-success">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-success/10 rounded-full px-2.5 py-1">
+              <UIcon name="i-lucide-zap" class="size-4 text-success" />
             </div>
-            <p class="text-3xl font-display font-bold text-green-500 mt-2">{{ sessionStats.easy }}</p>
+            <p class="text-3xl font-display font-bold text-success mt-2">{{ sessionStats.easy }}</p>
             <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Easy</p>
           </div>
         </div>
@@ -537,7 +539,7 @@ onBeforeUnmount(() => {
 
       <!-- Progress Bar -->
       <div class="mb-5">
-        <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200/80 dark:bg-gray-700/50 shadow-inner">
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted/80 dark:bg-elevated/50 shadow-inner">
           <div
             class="h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(139,92,246,0.5)]"
             style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #8B5CF6); background-size: 200% 100%; animation: gradient-shift 4s ease infinite;"
@@ -617,7 +619,7 @@ onBeforeUnmount(() => {
             >
               <div class="absolute inset-x-0 top-0 h-1" style="background: linear-gradient(90deg, #10B981, #34D399);" />
               <div class="absolute top-6 left-6 flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 shadow-sm">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-success/10 border border-success/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-success shadow-sm">
                   <UIcon name="i-lucide-lightbulb" class="size-3.5" />
                   BACK
                 </span>
@@ -639,7 +641,7 @@ onBeforeUnmount(() => {
           variant="soft"
           size="xl"
           icon="i-lucide-rotate-ccw"
-          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-red-500/10"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md"
           :style="{ animationDelay: '0ms' }"
           @click="rate(1)"
         >
@@ -651,7 +653,7 @@ onBeforeUnmount(() => {
           variant="soft"
           size="xl"
           icon="i-lucide-alert-triangle"
-          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-amber-500/10"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md"
           :style="{ animationDelay: '40ms' }"
           @click="rate(2)"
         >
@@ -663,7 +665,7 @@ onBeforeUnmount(() => {
           variant="soft"
           size="xl"
           icon="i-lucide-check"
-          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-blue-500/10"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md"
           :style="{ animationDelay: '80ms' }"
           @click="rate(3)"
         >
@@ -675,7 +677,7 @@ onBeforeUnmount(() => {
           variant="soft"
           size="xl"
           icon="i-lucide-zap"
-          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-green-500/10"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md"
           :style="{ animationDelay: '120ms' }"
           @click="rate(4)"
         >
@@ -742,63 +744,3 @@ onBeforeUnmount(() => {
     </UModal>
   </UPage>
 </template>
-
-<style scoped>
-/* ─── Study Card ─── */
-.study-card {
-  background-color: var(--color-white, #fff);
-  border: 1px solid var(--color-gray-200, #e5e7eb);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 32px -4px rgb(139 92 246 / 0.2);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.study-card:hover {
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.25), 0 0 48px -4px rgb(139 92 246 / 0.35);
-  transform: translateY(-2px);
-}
-
-.dark .study-card {
-  background-color: var(--color-gray-900, #111827);
-  border-color: var(--color-gray-700, #374151);
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.2), 0 0 40px -4px rgb(139 92 246 / 0.3);
-}
-
-.dark .study-card:hover {
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.35), 0 0 60px -4px rgb(139 92 246 / 0.45);
-}
-
-.study-card-inner {
-  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* ─── Confetti v2 ─── */
-.confetti-container {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 50;
-}
-
-.confetti-piece {
-  position: absolute;
-  top: -10px;
-  opacity: 0;
-  animation: confetti-v2 3.5s ease-in forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .study-card:hover {
-    transform: none;
-  }
-
-  .study-card-inner {
-    transition: none;
-  }
-
-  .confetti-piece {
-    animation: none !important;
-  }
-}
-</style>
