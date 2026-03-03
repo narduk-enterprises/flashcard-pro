@@ -57,6 +57,9 @@ const { decks, pending, error } = useDecks()
           <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
             {{ deck.description }}
           </p>
+          <p class="mt-1 text-xs text-default-muted">
+            {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+          </p>
         </div>
         <div class="flex flex-wrap gap-2">
           <UButton

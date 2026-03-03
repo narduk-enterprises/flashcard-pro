@@ -23,6 +23,8 @@ const cardList = computed(() => (cards.value ?? []) as Card[])
 const currentIndex = ref(0)
 const flipped = ref(false)
 const ratingInProgress = ref(false)
+const sessionComplete = ref(false)
+const sessionStats = reactive({ again: 0, hard: 0, good: 0, easy: 0 })
 
 const currentCard = computed(() => {
   const list = cardList.value
@@ -37,6 +39,14 @@ const progressLabel = computed(() => {
   return `${Math.min(i, total)} / ${total}`
 })
 
+const progressPercent = computed(() => {
+  const total = cardList.value.length
+  if (total === 0) return 0
+  return Math.round(((currentIndex.value) / total) * 100)
+})
+
+const sessionTotal = computed(() => sessionStats.again + sessionStats.hard + sessionStats.good + sessionStats.easy)
+
 const canRate = computed(() => flipped.value && currentCard.value && !ratingInProgress.value)
 
 function flip() {
@@ -48,17 +58,56 @@ async function rate(r: number) {
   ratingInProgress.value = true
   try {
     await submitReview({ cardId: currentCard.value.id, rating: r })
+    if (r === 1) sessionStats.again++
+    else if (r === 2) sessionStats.hard++
+    else if (r === 3) sessionStats.good++
+    else if (r === 4) sessionStats.easy++
     flipped.value = false
     if (currentIndex.value < cardList.value.length - 1) {
       currentIndex.value++
     } else {
-      currentIndex.value = 0
-      await refresh()
+      sessionComplete.value = true
     }
   } finally {
     ratingInProgress.value = false
   }
 }
+
+function restartSession() {
+  sessionComplete.value = false
+  sessionStats.again = 0
+  sessionStats.hard = 0
+  sessionStats.good = 0
+  sessionStats.easy = 0
+  currentIndex.value = 0
+  flipped.value = false
+  refresh()
+}
+
+function onStudyKeydown(event: KeyboardEvent) {
+  if (sessionComplete.value) return
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+  if (event.key === ' ' || event.key === 'Enter') {
+    event.preventDefault()
+    flip()
+  } else if (canRate.value && event.key === '1') {
+    rate(1)
+  } else if (canRate.value && event.key === '2') {
+    rate(2)
+  } else if (canRate.value && event.key === '3') {
+    rate(3)
+  } else if (canRate.value && event.key === '4') {
+    rate(4)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onStudyKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onStudyKeydown)
+})
 </script>
 
 <template>
@@ -91,7 +140,57 @@ async function rate(r: number) {
       <UButton v-if="deck" :to="`/decks/${deck.id}`" class="mt-4">Manage deck</UButton>
     </div>
 
+    <!-- Session Summary -->
+    <div v-else-if="sessionComplete" class="mx-auto max-w-2xl">
+      <div class="card-base p-8 text-center">
+        <UIcon name="i-lucide-trophy" class="mx-auto mb-4 size-12 text-primary" />
+        <h2 class="font-display text-2xl font-bold text-default">Session Complete!</h2>
+        <p class="mt-2 text-default-muted">
+          You reviewed {{ sessionTotal }} card{{ sessionTotal === 1 ? '' : 's' }} in this session.
+        </p>
+
+        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl border border-default bg-muted p-3">
+            <p class="text-2xl font-bold text-default">{{ sessionStats.again }}</p>
+            <p class="text-xs text-default-muted">Again</p>
+          </div>
+          <div class="rounded-xl border border-default bg-muted p-3">
+            <p class="text-2xl font-bold text-default">{{ sessionStats.hard }}</p>
+            <p class="text-xs text-default-muted">Hard</p>
+          </div>
+          <div class="rounded-xl border border-default bg-muted p-3">
+            <p class="text-2xl font-bold text-default">{{ sessionStats.good }}</p>
+            <p class="text-xs text-default-muted">Good</p>
+          </div>
+          <div class="rounded-xl border border-default bg-muted p-3">
+            <p class="text-2xl font-bold text-default">{{ sessionStats.easy }}</p>
+            <p class="text-xs text-default-muted">Easy</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+          <UButton icon="i-lucide-rotate-ccw" color="primary" @click="restartSession">
+            Study again
+          </UButton>
+          <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home">
+            Dashboard
+          </UButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Cards -->
     <div v-else class="mx-auto max-w-2xl">
+      <!-- Progress Bar -->
+      <div class="mb-4">
+        <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            class="h-full rounded-full bg-primary transition-all duration-300"
+            :style="{ width: `${progressPercent}%` }"
+          />
+        </div>
+      </div>
+
       <div
         class="card-base focus-glow cursor-pointer select-none overflow-hidden transition-base hover:shadow-overlay"
         style="min-height: 14rem; perspective: 1000px;"
@@ -108,7 +207,9 @@ async function rate(r: number) {
           >
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
             <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(currentCard.front)" />
-            <p class="text-default-muted mt-2 text-center text-sm">Click to flip</p>
+            <p class="text-default-muted mt-2 text-center text-sm">
+              Press <UKbd value="Space" class="mx-0.5" /> to flip
+            </p>
           </div>
           <div
             class="absolute inset-0 flex flex-col justify-center p-6"
@@ -116,7 +217,9 @@ async function rate(r: number) {
           >
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
             <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(currentCard.back)" />
-            <p class="text-default-muted mt-2 text-center text-sm">Click to flip back</p>
+            <p class="text-default-muted mt-2 text-center text-sm">
+              Press <UKbd value="Space" class="mx-0.5" /> to flip back
+            </p>
           </div>
         </div>
       </div>
@@ -128,7 +231,7 @@ async function rate(r: number) {
           size="lg"
           @click="rate(1)"
         >
-          Again
+          Again <UKbd value="1" class="ml-1" />
         </UButton>
         <UButton
           color="warning"
@@ -136,7 +239,7 @@ async function rate(r: number) {
           size="lg"
           @click="rate(2)"
         >
-          Hard
+          Hard <UKbd value="2" class="ml-1" />
         </UButton>
         <UButton
           color="primary"
@@ -144,7 +247,7 @@ async function rate(r: number) {
           size="lg"
           @click="rate(3)"
         >
-          Good
+          Good <UKbd value="3" class="ml-1" />
         </UButton>
         <UButton
           color="success"
@@ -152,7 +255,7 @@ async function rate(r: number) {
           size="lg"
           @click="rate(4)"
         >
-          Easy
+          Easy <UKbd value="4" class="ml-1" />
         </UButton>
       </div>
     </div>
