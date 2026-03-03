@@ -452,34 +452,34 @@ onBeforeUnmount(() => {
         </p>
 
         <!-- Stats Grid -->
-        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div class="rounded-xl border border-default bg-muted/50 p-3">
-            <div class="flex items-center justify-center gap-1.5 mb-1">
+        <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-red-500">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-red-500/10 rounded-full px-2.5 py-1">
               <UIcon name="i-lucide-rotate-ccw" class="size-4 text-red-500" />
             </div>
-            <p class="text-2xl font-bold text-red-500">{{ sessionStats.again }}</p>
-            <p class="text-xs text-default-muted">Again</p>
+            <p class="text-3xl font-display font-bold text-red-500 mt-2">{{ sessionStats.again }}</p>
+            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Again</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted/50 p-3">
-            <div class="flex items-center justify-center gap-1.5 mb-1">
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-amber-500">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-amber-500/10 rounded-full px-2.5 py-1">
               <UIcon name="i-lucide-alert-triangle" class="size-4 text-amber-500" />
             </div>
-            <p class="text-2xl font-bold text-amber-500">{{ sessionStats.hard }}</p>
-            <p class="text-xs text-default-muted">Hard</p>
+            <p class="text-3xl font-display font-bold text-amber-500 mt-2">{{ sessionStats.hard }}</p>
+            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Hard</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted/50 p-3">
-            <div class="flex items-center justify-center gap-1.5 mb-1">
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-blue-500">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-blue-500/10 rounded-full px-2.5 py-1">
               <UIcon name="i-lucide-check" class="size-4 text-blue-500" />
             </div>
-            <p class="text-2xl font-bold text-blue-500">{{ sessionStats.good }}</p>
-            <p class="text-xs text-default-muted">Good</p>
+            <p class="text-3xl font-display font-bold text-blue-500 mt-2">{{ sessionStats.good }}</p>
+            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Good</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted/50 p-3">
-            <div class="flex items-center justify-center gap-1.5 mb-1">
+          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-l-green-500">
+            <div class="flex items-center justify-center gap-1.5 mb-1 bg-green-500/10 rounded-full px-2.5 py-1">
               <UIcon name="i-lucide-zap" class="size-4 text-green-500" />
             </div>
-            <p class="text-2xl font-bold text-green-500">{{ sessionStats.easy }}</p>
-            <p class="text-xs text-default-muted">Easy</p>
+            <p class="text-3xl font-display font-bold text-green-500 mt-2">{{ sessionStats.easy }}</p>
+            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Easy</p>
           </div>
         </div>
 
@@ -537,9 +537,9 @@ onBeforeUnmount(() => {
 
       <!-- Progress Bar -->
       <div class="mb-5">
-        <div class="h-3 w-full overflow-hidden rounded-full bg-gray-200/80 dark:bg-gray-700/50">
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200/80 dark:bg-gray-700/50 shadow-inner">
           <div
-            class="h-full rounded-full transition-all duration-500 ease-out"
+            class="h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(139,92,246,0.5)]"
             style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #8B5CF6); background-size: 200% 100%; animation: gradient-shift 4s ease infinite;"
             :style="{ width: `${progressPercent}%` }"
           />
@@ -572,98 +572,115 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- ═══ The Flashcard ═══ -->
-      <div
-        class="study-card gradient-border cursor-pointer select-none overflow-hidden"
-        style="min-height: 20rem; perspective: 1200px;"
-        @click="flip"
-      >
+      <div class="relative group mt-2 sm:mt-0">
+        <!-- Floating Swipe Hint (Mobile only) -->
+        <div v-if="!flipped && currentCard" class="absolute -top-10 inset-x-0 flex justify-center sm:hidden z-10 pointer-events-none opacity-60">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm px-3 py-1 text-xs font-medium text-white shadow-lg animate-float">
+            <UIcon name="i-lucide-hand" class="size-3.5" />
+            Tap to flip
+          </span>
+        </div>
+
         <div
-          class="study-card-inner relative w-full transition-transform"
-          style="transform-style: preserve-3d; min-height: 20rem;"
-          :style="{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }"
+          class="study-card-glass cursor-pointer select-none overflow-hidden"
+          :class="{ 'study-card-glass-flipped': flipped, 'focus-glow': focusMode }"
+          style="min-height: 24rem; perspective: 1200px;"
+          @click="flip"
         >
-          <!-- FRONT -->
           <div
-            class="absolute inset-0 flex flex-col justify-center p-8"
-            style="backface-visibility: hidden;"
+            class="study-card-inner relative w-full h-full transition-transform duration-500"
+            style="transform-style: preserve-3d; min-height: 24rem;"
+            :style="{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }"
           >
-            <div class="mb-4 flex items-center gap-2">
-              <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                <UIcon name="i-lucide-eye" class="size-3" />
-                FRONT
-              </span>
+            <!-- FRONT -->
+            <div
+              class="absolute inset-0 flex flex-col justify-center p-6 sm:p-10"
+              style="backface-visibility: hidden;"
+            >
+              <div class="absolute inset-x-0 top-0 h-1" style="background: linear-gradient(90deg, #8B5CF6, #3B82F6);" />
+              <div class="absolute top-6 left-6 flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+                  <UIcon name="i-lucide-eye" class="size-3.5" />
+                  FRONT
+                </span>
+              </div>
+              <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
+              <div v-if="currentCard" class="text-default text-xl sm:text-2xl leading-relaxed text-center font-medium mt-8" v-html="renderMarkdown(displayFront)" />
+              <p class="absolute bottom-6 inset-x-0 text-default-muted text-center text-sm opacity-70 transition-opacity group-hover:opacity-100 hidden sm:block">
+                Press <UKbd value="Space" class="mx-0.5 shadow-sm" /> to flip
+              </p>
             </div>
-            <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <div v-if="currentCard" class="text-default text-lg leading-relaxed" v-html="renderMarkdown(displayFront)" />
-            <p class="text-default-muted mt-4 text-center text-sm">
-              Press <UKbd value="Space" class="mx-0.5" /> to flip
-            </p>
-          </div>
-          <!-- BACK -->
-          <div
-            class="absolute inset-0 flex flex-col justify-center p-8"
-            style="backface-visibility: hidden; transform: rotateY(180deg);"
-          >
-            <div class="mb-4 flex items-center gap-2">
-              <span class="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
-                <UIcon name="i-lucide-lightbulb" class="size-3" />
-                BACK
-              </span>
+            <!-- BACK -->
+            <div
+              class="absolute inset-0 flex flex-col justify-center p-6 sm:p-10"
+              style="backface-visibility: hidden; transform: rotateY(180deg);"
+            >
+              <div class="absolute inset-x-0 top-0 h-1" style="background: linear-gradient(90deg, #10B981, #34D399);" />
+              <div class="absolute top-6 left-6 flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 shadow-sm">
+                  <UIcon name="i-lucide-lightbulb" class="size-3.5" />
+                  BACK
+                </span>
+              </div>
+              <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
+              <div v-if="currentCard" class="text-default text-xl sm:text-2xl leading-relaxed text-center font-medium mt-8" v-html="renderMarkdown(displayBack)" />
+              <p class="absolute bottom-6 inset-x-0 text-default-muted text-center text-sm opacity-70 transition-opacity group-hover:opacity-100 hidden sm:block">
+                Press <UKbd value="Space" class="mx-0.5 shadow-sm" /> to flip back
+              </p>
             </div>
-            <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <div v-if="currentCard" class="text-default text-lg leading-relaxed" v-html="renderMarkdown(displayBack)" />
-            <p class="text-default-muted mt-4 text-center text-sm">
-              Press <UKbd value="Space" class="mx-0.5" /> to flip back
-            </p>
           </div>
         </div>
       </div>
 
       <!-- ═══ Rating Buttons ═══ -->
-      <div v-if="canRate" class="mt-6 flex flex-wrap justify-center gap-3">
+      <div v-if="canRate" class="mt-8 flex flex-wrap justify-center gap-3 sm:gap-4 mobile-rating-bar sm:relative sm:bottom-auto sm:bg-transparent sm:border-none sm:shadow-none sm:p-0">
         <UButton
           color="error"
           variant="soft"
-          size="lg"
+          size="xl"
           icon="i-lucide-rotate-ccw"
-          class="animate-bounce-in"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-red-500/10"
           :style="{ animationDelay: '0ms' }"
           @click="rate(1)"
         >
-          Again <UKbd value="1" class="ml-1" />
+          <span class="font-medium tracking-wide">Again</span>
+          <UKbd value="1" class="ml-1 hidden sm:inline-flex opacity-70" />
         </UButton>
         <UButton
           color="warning"
           variant="soft"
-          size="lg"
+          size="xl"
           icon="i-lucide-alert-triangle"
-          class="animate-bounce-in"
-          :style="{ animationDelay: '60ms' }"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-amber-500/10"
+          :style="{ animationDelay: '40ms' }"
           @click="rate(2)"
         >
-          Hard <UKbd value="2" class="ml-1" />
+          <span class="font-medium tracking-wide">Hard</span>
+          <UKbd value="2" class="ml-1 hidden sm:inline-flex opacity-70" />
         </UButton>
         <UButton
           color="primary"
           variant="soft"
-          size="lg"
+          size="xl"
           icon="i-lucide-check"
-          class="animate-bounce-in"
-          :style="{ animationDelay: '120ms' }"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-blue-500/10"
+          :style="{ animationDelay: '80ms' }"
           @click="rate(3)"
         >
-          Good <UKbd value="3" class="ml-1" />
+          <span class="font-medium tracking-wide">Good</span>
+          <UKbd value="3" class="ml-1 hidden sm:inline-flex opacity-70" />
         </UButton>
         <UButton
           color="success"
           variant="soft"
-          size="lg"
+          size="xl"
           icon="i-lucide-zap"
-          class="animate-bounce-in"
-          :style="{ animationDelay: '180ms' }"
+          class="animate-bounce-in flex-1 sm:flex-none shadow-sm hover:shadow-md hover:shadow-green-500/10"
+          :style="{ animationDelay: '120ms' }"
           @click="rate(4)"
         >
-          Easy <UKbd value="4" class="ml-1" />
+          <span class="font-medium tracking-wide">Easy</span>
+          <UKbd value="4" class="ml-1 hidden sm:inline-flex opacity-70" />
         </UButton>
       </div>
 
