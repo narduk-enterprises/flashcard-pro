@@ -20,6 +20,7 @@
   "dependencies": {
     "@loganrenz/narduk-nuxt-template-layer": "workspace:*",
     "@narduk/eslint-config": "workspace:*",
+    "@vueuse/core": "^14.2.1",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
     "uuid": "^13.0.0",

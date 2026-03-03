@@ -53,6 +53,83 @@ const demoDecks = [
         ],
     },
     {
+        categorySlug: 'programming',
+        name: 'SQL Fundamentals',
+        description: 'SELECT, WHERE, and JOIN.',
+        cards: [
+            ['Keyword to filter rows?', 'WHERE'],
+            ['Join that keeps only matching rows?', 'INNER JOIN'],
+            ['Aggregate to count rows?', 'COUNT(*)'],
+            ['Sort results with ___', 'ORDER BY'],
+        ],
+    },
+    {
+        categorySlug: 'programming',
+        name: 'HTTP Status Codes',
+        description: 'Common REST API status codes.',
+        cards: [
+            ['200 means ___', 'OK (success)'],
+            ['201 means ___', 'Created'],
+            ['404 means ___', 'Not Found'],
+            ['500 means ___', 'Internal Server Error'],
+        ],
+    },
+    {
+        categorySlug: 'programming',
+        name: 'Git Commands',
+        description: 'Essential Git workflow.',
+        cards: [
+            ['Stage all changes', 'git add .'],
+            ['Commit with message', 'git commit -m "message"'],
+            ['Push to remote', 'git push'],
+            ['Create and switch to branch', 'git checkout -b <name>'],
+        ],
+    },
+    {
+        categorySlug: 'programming',
+        name: 'TypeScript Types',
+        description: 'Interfaces and type safety.',
+        cards: [
+            ['Declare an interface', 'interface Name { ... }'],
+            ['Optional property in interface?', 'prop?: Type'],
+            ['Array of strings type', 'string[]'],
+            ['Generic with constraint', '<T extends SomeType>'],
+        ],
+    },
+    {
+        categorySlug: 'programming',
+        name: 'CSS Flexbox',
+        description: 'Layout with display: flex.',
+        cards: [
+            ['Center items on main axis', 'justify-content: center'],
+            ['Center on cross axis', 'align-items: center'],
+            ['Direction column', 'flex-direction: column'],
+            ['Wrap items to next line', 'flex-wrap: wrap'],
+        ],
+    },
+    {
+        categorySlug: 'programming',
+        name: 'Nuxt 4 Key Concepts',
+        description: 'useAsyncData, server routes, and layers.',
+        cards: [
+            ['Fetch data for SSR', 'useAsyncData() or useFetch()'],
+            ['Server API route folder', 'server/api/'],
+            ['Composable for SEO title/desc', 'useSeo()'],
+            ['Shared config and components', 'Nuxt Layer'],
+        ],
+    },
+    {
+        categorySlug: 'geography',
+        name: 'World Capitals',
+        description: 'A few country capitals.',
+        cards: [
+            ['France', 'Paris'],
+            ['Japan', 'Tokyo'],
+            ['Brazil', 'Brasília'],
+            ['Egypt', 'Cairo'],
+        ],
+    },
+    {
         categorySlug: 'languages',
         name: 'Spanish 101',
         description: 'Common phrases.',

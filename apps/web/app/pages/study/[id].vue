@@ -36,6 +36,7 @@ watch(deck, (d) => {
 const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
 const { render: renderMarkdown } = useMarkdown()
 const { submitReview } = useSubmitReview()
+import { useSwipe } from '@vueuse/core'
 
 const pending = computed(() => deckPending.value || cardsPending.value)
 const shuffled = ref(false)
@@ -226,6 +227,25 @@ async function rate(r: number) {
     ratingInProgress.value = false
   }
 }
+
+// Feature 25: Swipe gestures
+const swipeTarget = ref<HTMLElement | null>(null)
+const { direction, isSwiping, lengthX } = useSwipe(swipeTarget)
+
+watch(isSwiping, (swiping) => {
+  if (!swiping) {
+    if (direction.value === 'left' && lengthX.value <= -50) {
+      if (canRate.value) {
+        // Default to 'Good' when swiping next
+        rate(3)
+      } else if (!flipped.value) {
+        flip()
+      }
+    } else if (direction.value === 'right' && lengthX.value >= 50) {
+      goToPreviousCard()
+    }
+  }
+})
 
 function toggleShuffle() {
   shuffled.value = !shuffled.value
@@ -584,7 +604,8 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          class="study-card-glass cursor-pointer select-none overflow-hidden"
+          ref="swipeTarget"
+          class="study-card-glass cursor-pointer select-none overflow-hidden touch-pan-y"
           :class="{ 'study-card-glass-flipped': flipped, 'focus-glow': focusMode }"
           style="min-height: 24rem; perspective: 1200px;"
           @click="flip"
