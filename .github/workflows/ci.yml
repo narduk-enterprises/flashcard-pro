@@ -138,6 +138,18 @@ jobs:
               exit $ret
             fi
           fi
+          set +e
+          out=$(pnpm exec wrangler d1 execute flashcard-pro-db --remote --file=drizzle/0003_tags_favorites_collaborators.sql 2>&1)
+          ret=$?
+          set -e
+          if [ $ret -ne 0 ]; then
+            if echo "$out" | grep -q "duplicate column name"; then
+              echo "Migration 0003 columns already exist, continuing."
+            else
+              echo "$out"
+              exit $ret
+            fi
+          fi
 
       - name: Build & Deploy
         working-directory: apps/web
