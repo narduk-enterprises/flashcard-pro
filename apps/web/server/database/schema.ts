@@ -6,14 +6,25 @@
  * tables below the re-export.
  */
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
-import { users } from '#layer/server/database/schema'
+import { users } from '../../../../layers/narduk-nuxt-layer/server/database/schema'
 
-export * from '#layer/server/database/schema'
+export * from '../../../../layers/narduk-nuxt-layer/server/database/schema'
+
+// ─── Categories ──────────────────────────────────────────────
+export const categories = sqliteTable('categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(), // e.g. "programming"
+  icon: text('icon').notNull().default('i-lucide-folder'), // lucide icon name
+  description: text('description').notNull().default(''),
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+})
 
 // ─── Decks ──────────────────────────────────────────────────
 export const decks = sqliteTable('decks', {
   id: text('id').primaryKey(),
   userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }), // NEW
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   tags: text('tags').notNull().default(''), // comma-separated tags
@@ -54,6 +65,8 @@ export const collaborators = sqliteTable('collaborators', {
   createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
 })
 
+export type Category = typeof categories.$inferSelect
+export type NewCategory = typeof categories.$inferInsert
 export type Deck = typeof decks.$inferSelect
 export type NewDeck = typeof decks.$inferInsert
 export type Card = typeof cards.$inferSelect

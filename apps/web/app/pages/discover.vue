@@ -29,11 +29,26 @@ const sortedDiscoverDecks = computed(() => {
   if (!decks.value) return []
   const copy = [...decks.value]
   if (discoverSortBy.value === 'cards') {
-    copy.sort((a, b) => (b.cardCount ?? 0) - (a.cardCount ?? 0))
+    copy.sort((a, b: any) => (b.cardCount ?? 0) - (a.cardCount ?? 0))
   } else {
-    copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    copy.sort((a, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }
   return copy
+})
+
+// Group by category
+const decksByCategory = computed(() => {
+  const groups: Record<string, typeof sortedDiscoverDecks.value> = {}
+  
+  for (const deck of sortedDiscoverDecks.value) {
+    const catName = (deck as any).categoryName || 'Uncategorized'
+    if (!groups[catName]) {
+      groups[catName] = []
+    }
+    groups[catName].push(deck)
+  }
+  
+  return groups
 })
 
 async function handleClone(deckId: string) {
@@ -115,80 +130,90 @@ async function toggleFavorite(deckId: string) {
       </UButton>
     </div>
 
-    <ul v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <li
-        v-for="(deck, i) in sortedDiscoverDecks"
-        :key="deck.id"
-        class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
-        :style="{ animationDelay: `${i * 50}ms` }"
-      >
-        <div class="min-h-0 flex-1">
-          <h3 class="font-display font-semibold text-default">
-            {{ deck.name }}
-          </h3>
-          <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
-            {{ deck.description }}
-          </p>
-          <p class="mt-1 text-xs text-default-muted">
-            {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
-          </p>
-          <!-- Feature 16: Clickable tags -->
-          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
-            <UButton
-              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
-              :key="tag"
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              class="rounded-full"
-              @click="searchByTag(tag)"
-            >
-              {{ tag }}
-            </UButton>
-          </div>
+    <div v-else class="space-y-12">
+      <div v-for="(categoryDecks, categoryName) in decksByCategory" :key="categoryName" class="space-y-4">
+        <div class="flex items-center gap-2 border-b border-default pb-2">
+          <UIcon name="i-lucide-folder" class="size-5 text-primary" />
+          <h2 class="text-xl font-display font-semibold text-default">{{ categoryName }}</h2>
+          <span class="rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted">{{ categoryDecks.length }}</span>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <UButton
-            :to="`/study/${deck.id}`"
-            size="sm"
-            icon="i-lucide-play"
-            color="primary"
-            variant="soft"
+        
+        <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <li
+            v-for="(deck, i) in categoryDecks"
+            :key="deck.id"
+            class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
+            :style="{ animationDelay: `${i * 50}ms` }"
           >
-            Study
-          </UButton>
-          <UButton
-            :to="`/decks/${deck.id}`"
-            size="sm"
-            icon="i-lucide-settings"
-            color="neutral"
-            variant="soft"
-          >
-            Manage
-          </UButton>
-          <UButton
-            v-if="isLoggedIn"
-            size="sm"
-            icon="i-lucide-copy"
-            color="neutral"
-            variant="soft"
-            :loading="cloningDeckId === deck.id"
-            @click="handleClone(deck.id)"
-          >
-            Clone
-          </UButton>
-          <UButton
-            v-if="isLoggedIn"
-            size="sm"
-            :icon="isFavorited(deck.id) ? 'i-lucide-heart' : 'i-lucide-heart'"
-            :color="isFavorited(deck.id) ? 'primary' : 'neutral'"
-            :variant="isFavorited(deck.id) ? 'soft' : 'ghost'"
-            @click="toggleFavorite(deck.id)"
-          >
-            {{ isFavorited(deck.id) ? 'Saved' : 'Save' }}
-          </UButton>
-        </div>
-      </li>
-    </ul>
+            <div class="min-h-0 flex-1">
+              <h3 class="font-display font-semibold text-default">
+                {{ deck.name }}
+              </h3>
+              <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
+                {{ deck.description }}
+              </p>
+              <p class="mt-1 text-xs text-default-muted">
+                {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+              </p>
+              <!-- Feature 16: Clickable tags -->
+              <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+                <UButton
+                  v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+                  :key="tag"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  class="rounded-full"
+                  @click="searchByTag(tag)"
+                >
+                  {{ tag }}
+                </UButton>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                :to="`/study/${deck.id}`"
+                size="sm"
+                icon="i-lucide-play"
+                color="primary"
+                variant="soft"
+              >
+                Study
+              </UButton>
+              <UButton
+                :to="`/decks/${deck.id}`"
+                size="sm"
+                icon="i-lucide-settings"
+                color="neutral"
+                variant="soft"
+              >
+                Manage
+              </UButton>
+              <UButton
+                v-if="isLoggedIn"
+                size="sm"
+                icon="i-lucide-copy"
+                color="neutral"
+                variant="soft"
+                :loading="cloningDeckId === deck.id"
+                @click="handleClone(deck.id)"
+              >
+                Clone
+              </UButton>
+              <UButton
+                v-if="isLoggedIn"
+                size="sm"
+                :icon="isFavorited(deck.id) ? 'i-lucide-heart' : 'i-lucide-heart'"
+                :color="isFavorited(deck.id) ? 'primary' : 'neutral'"
+                :variant="isFavorited(deck.id) ? 'soft' : 'ghost'"
+                @click="toggleFavorite(deck.id)"
+              >
+                {{ isFavorited(deck.id) ? 'Saved' : 'Save' }}
+              </UButton>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
   </UPage>
 </template>

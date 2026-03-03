@@ -18,5 +18,13 @@
       "database_name": "flashcard-pro-db",
       "database_id": "33339463-c658-4d43-aabc-8a79e73ccd3e"
     }
-  ]
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "triggers": {
+    "crons": [
+      "0 */4 * * *"
+    ]
+  }
 }
