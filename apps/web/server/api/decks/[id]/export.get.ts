@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
     csv += `"${front}","${back}"\n`
   }
   setResponseHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
-  setResponseHeader(event, 'Content-Disposition', `attachment; filename="${deck.name.replaceAll('"', '')}.csv"`)
+  const safeName = deck.name.replaceAll(/[^\w\s-]/g, '').trim() || 'deck'
+  setResponseHeader(event, 'Content-Disposition', `attachment; filename="${safeName}.csv"`)
   return csv
 })

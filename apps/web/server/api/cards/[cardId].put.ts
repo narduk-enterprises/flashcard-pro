@@ -1,5 +1,5 @@
-import { eq } from 'drizzle-orm'
-import { cards, decks } from '../../database/schema'
+import { eq, and } from 'drizzle-orm'
+import { cards, decks, collaborators } from '../../database/schema'
 import { z } from 'zod'
 import { requireUser } from '../../utils/auth'
 
@@ -21,8 +21,13 @@ export default defineEventHandler(async (event) => {
   const [card] = await db.select().from(cards).where(eq(cards.id, cardId))
   if (!card) throw createError({ statusCode: 404, message: 'Card not found' })
   const [deck] = await db.select().from(decks).where(eq(decks.id, card.deckId))
-  if (!deck || deck.userId !== user.id) {
-    throw createError({ statusCode: 403, message: 'Only the deck owner can edit cards' })
+  if (!deck) throw createError({ statusCode: 404, message: 'Deck not found' })
+  const isOwner = deck.userId === user.id
+  const [isCollab] = await db.select().from(collaborators).where(
+    and(eq(collaborators.deckId, deck.id), eq(collaborators.userId, user.id)),
+  )
+  if (!isOwner && !isCollab) {
+    throw createError({ statusCode: 403, message: 'Only the deck owner or collaborators can edit cards' })
   }
   await db.update(cards).set({
     front: parsed.data.front,

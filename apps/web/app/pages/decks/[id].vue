@@ -192,11 +192,14 @@ async function bulkAddCards() {
 }
 
 function exportDeck() {
+  if (!import.meta.client) return
   exporting.value = true
   const link = document.createElement('a')
   link.href = `/api/decks/${deckId.value}/export`
   link.download = `${deck.value?.name ?? 'deck'}.csv`
+  document.body.appendChild(link)
   link.click()
+  link.remove()
   setTimeout(() => { exporting.value = false }, 1000)
 }
 
