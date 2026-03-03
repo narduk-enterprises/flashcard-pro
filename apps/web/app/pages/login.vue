@@ -40,23 +40,21 @@ async function onSubmit() {
       style="background-image: url('/images/auth-bg.webp');"
       aria-hidden="true"
     />
-    <div class="relative flex flex-col items-center flex-1">
-      <UPage>
-        <UPageHeader title="Log in" description="Log in to create decks and manage your cards.">
-          <template #links>
-            <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-arrow-left">
-              Back
-            </UButton>
-          </template>
-        </UPageHeader>
+    <div class="relative flex flex-col justify-center items-center flex-1 py-12 sm:px-6 lg:px-8">
+      <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
+        <h2 class="text-3xl font-display font-bold text-default">Log in</h2>
+        <p class="mt-2 text-sm text-default-muted">Log in to create decks and manage your cards.</p>
+      </div>
 
-        <UForm :state="state" class="glass-card shadow-elevated max-w-sm w-full space-y-4 p-6 animate-count-in" @submit="onSubmit">
-      <UFormField label="Email" name="email" required>
-        <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" />
-      </UFormField>
-      <UFormField label="Password" name="password" required>
-        <UInput v-model="state.password" type="password" placeholder="••••••••" size="lg" />
-      </UFormField>
+      <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="glass-card shadow-elevated py-8 px-4 sm:px-10 animate-count-in">
+          <UForm :state="state" class="space-y-6" @submit="onSubmit">
+            <UFormField label="Email" name="email" required>
+              <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Password" name="password" required>
+              <UInput v-model="state.password" type="password" placeholder="••••••••" size="lg" class="w-full" />
+            </UFormField>
       <p v-if="error" class="text-sm text-muted">
         {{ error }}
       </p>
@@ -70,7 +68,7 @@ async function onSubmit() {
         </p>
       </div>
     </UForm>
-      </UPage>
+      </div>
     </div>
   </div>
 </template>
