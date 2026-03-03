@@ -4,16 +4,35 @@ import type { Card } from '../../types/flashcard'
 const route = useRoute()
 const deckId = computed(() => route.params.id as string)
 
+const { deck, pending: deckPending } = useDeck(deckId)
+
+// Dynamic SEO — updates when deck data loads
+const seoTitle = computed(() => deck.value ? `Study ${deck.value.name} — FlashCardPro` : 'Study — FlashCardPro')
+const seoDescription = computed(() => deck.value ? `Study "${deck.value.name}" with spaced repetition. ${deck.value.cardCount ?? 0} flashcards.` : 'Study this deck with spaced repetition.')
+
 useSeo({
-  title: 'Study — FlashCardPro',
-  description: 'Study this deck with spaced repetition.',
+  title: seoTitle.value,
+  description: seoDescription.value,
 })
 useWebPageSchema({
-  name: 'Study — FlashCardPro',
-  description: 'Study this deck with spaced repetition.',
+  name: seoTitle.value,
+  description: seoDescription.value,
 })
 
-const { deck, pending: deckPending } = useDeck(deckId)
+watch(deck, (d) => {
+  if (d) {
+    useSeo({
+      title: `Study ${d.name} — FlashCardPro`,
+      description: `Study "${d.name}" with spaced repetition. ${d.cardCount ?? 0} flashcards.`,
+    })
+    useBreadcrumbSchema([
+      { name: 'Home', url: '/' },
+      { name: 'Discover', url: '/discover' },
+      { name: `Study: ${d.name}`, url: `/study/${d.id}` },
+    ])
+  }
+})
+
 const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
 const { render: renderMarkdown } = useMarkdown()
 const { submitReview } = useSubmitReview()
@@ -117,6 +136,64 @@ const progressPercent = computed(() => {
 const sessionTotal = computed(() => sessionStats.again + sessionStats.hard + sessionStats.good + sessionStats.easy)
 
 const canRate = computed(() => flipped.value && currentCard.value && !ratingInProgress.value)
+
+// Score ring computed values
+const scoreCircumference = 2 * Math.PI * 45 // radius 45
+const scoreOffset = computed(() => {
+  return scoreCircumference - (scorePercent.value / 100) * scoreCircumference
+})
+
+// Time per card
+const timePerCard = computed(() => {
+  if (sessionTotal.value === 0) return '0s'
+  const secs = Math.round(elapsedSeconds.value / sessionTotal.value)
+  if (secs >= 60) {
+    const m = Math.floor(secs / 60)
+    const s = secs % 60
+    return `${m}m ${s}s`
+  }
+  return `${secs}s`
+})
+
+// Score color
+const scoreColor = computed(() => {
+  const p = scorePercent.value
+  if (p >= 80) return 'rgb(34 197 94)' // green
+  if (p >= 60) return 'rgb(59 130 246)' // blue
+  if (p >= 40) return 'rgb(245 158 11)' // amber
+  return 'rgb(239 68 68)' // red
+})
+
+const scoreLabel = computed(() => {
+  const p = scorePercent.value
+  if (p >= 90) return 'Excellent!'
+  if (p >= 75) return 'Great job!'
+  if (p >= 50) return 'Good effort'
+  return 'Keep practicing'
+})
+
+// Confetti colors
+const confettiColors = ['#8B5CF6', '#3B82F6', '#EC4899', '#10B981', '#F59E0B', '#6366F1', '#14B8A6']
+
+function getConfettiStyle(n: number) {
+  const color = confettiColors[n % confettiColors.length]!
+  const rot = 360 + Math.random() * 720
+  const left = Math.random() * 100
+  const delay = Math.random() * 2
+  const size = 6 + Math.random() * 8
+  const shapes = ['50%', '2px', '0'] // circle, square-ish, sharp
+  const radius = shapes[n % shapes.length]
+  return {
+    '--i': n,
+    '--rot': rot,
+    backgroundColor: color,
+    left: `${left}%`,
+    width: `${size}px`,
+    height: `${size}px`,
+    borderRadius: radius,
+    animationDelay: `${delay}s`,
+  }
+}
 
 function flip() {
   flipped.value = !flipped.value
@@ -257,7 +334,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UPage :class="{ 'fixed inset-0 z-[100] bg-default flex flex-col items-center justify-center p-8': focusMode }">
+  <UPage :class="{ 'fixed inset-0 z-[100] flex flex-col items-center justify-center p-8': focusMode }">
+    <!-- Focus mode backdrop -->
+    <div
+      v-if="focusMode"
+      class="absolute inset-0 -z-10"
+      aria-hidden="true"
+    >
+      <div class="absolute inset-0 bg-gray-950" />
+      <div class="absolute inset-0 opacity-30" style="background: radial-gradient(ellipse at 30% 20%, rgb(139 92 246 / 0.3), transparent 60%), radial-gradient(ellipse at 70% 80%, rgb(59 130 246 / 0.2), transparent 60%);" />
+    </div>
+
     <UPageHeader
       v-if="!focusMode"
       :title="deck?.name ?? 'Study'"
@@ -311,47 +398,101 @@ onBeforeUnmount(() => {
       <UButton v-if="deck" :to="`/decks/${deck.id}`" class="mt-4">Manage deck</UButton>
     </div>
 
-    <!-- Session Summary -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- Session Complete                                    -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <div v-else-if="sessionComplete" class="mx-auto max-w-2xl">
-      <!-- Feature 19: Confetti -->
+      <!-- Confetti v2 -->
       <div class="confetti-container" aria-hidden="true">
-        <div v-for="n in 20" :key="n" class="confetti-piece bg-primary size-2.5 rounded-full" :style="{ '--i': n }" />
+        <div
+          v-for="n in 30"
+          :key="n"
+          class="confetti-piece"
+          :style="getConfettiStyle(n)"
+        />
       </div>
-      <div class="card-base p-8 text-center">
-        <UIcon name="i-lucide-trophy" class="mx-auto mb-4 size-12 text-primary" />
-        <h2 class="font-display text-2xl font-bold text-default">Session Complete!</h2>
+
+      <div class="card-base relative overflow-hidden p-8 text-center">
+        <!-- Gradient accent at top -->
+        <div class="absolute inset-x-0 top-0 h-1" style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #EC4899);" />
+
+        <!-- Score Ring -->
+        <div class="mx-auto mb-6 relative" style="width: 140px; height: 140px;">
+          <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+            <!-- Background ring -->
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none"
+              stroke="currentColor"
+              class="text-gray-200 dark:text-gray-700"
+              stroke-width="6"
+            />
+            <!-- Score ring -->
+            <circle
+              cx="50" cy="50" r="45"
+              fill="none"
+              :stroke="scoreColor"
+              stroke-width="6"
+              stroke-linecap="round"
+              :stroke-dasharray="scoreCircumference"
+              :stroke-dashoffset="scoreCircumference"
+              class="animate-score-ring"
+              :style="{ '--score-circumference': scoreCircumference, '--score-offset': scoreOffset }"
+            />
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-3xl font-bold font-display" :style="{ color: scoreColor }">{{ scorePercent }}%</span>
+            <span class="text-xs text-default-muted mt-0.5">score</span>
+          </div>
+        </div>
+
+        <h2 class="font-display text-2xl font-bold text-default">{{ scoreLabel }}</h2>
         <p class="mt-2 text-default-muted">
           You reviewed {{ sessionTotal }} card{{ sessionTotal === 1 ? '' : 's' }} in this session.
         </p>
 
-        <!-- Feature 7: Score percentage -->
-        <div class="mt-4">
-          <p class="text-4xl font-bold text-primary">{{ scorePercent }}%</p>
-          <p class="text-sm text-default-muted">Performance score</p>
-        </div>
-
-        <!-- Feature 5: Session time -->
-        <p class="mt-2 text-sm text-default-muted">
-          <UIcon name="i-lucide-clock" class="inline size-4" /> Time: {{ formattedTime }}
-        </p>
-
+        <!-- Stats Grid -->
         <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div class="rounded-xl border border-default bg-muted p-3">
-            <p class="text-2xl font-bold text-default">{{ sessionStats.again }}</p>
+          <div class="rounded-xl border border-default bg-muted/50 p-3">
+            <div class="flex items-center justify-center gap-1.5 mb-1">
+              <UIcon name="i-lucide-rotate-ccw" class="size-4 text-red-500" />
+            </div>
+            <p class="text-2xl font-bold text-red-500">{{ sessionStats.again }}</p>
             <p class="text-xs text-default-muted">Again</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted p-3">
-            <p class="text-2xl font-bold text-default">{{ sessionStats.hard }}</p>
+          <div class="rounded-xl border border-default bg-muted/50 p-3">
+            <div class="flex items-center justify-center gap-1.5 mb-1">
+              <UIcon name="i-lucide-alert-triangle" class="size-4 text-amber-500" />
+            </div>
+            <p class="text-2xl font-bold text-amber-500">{{ sessionStats.hard }}</p>
             <p class="text-xs text-default-muted">Hard</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted p-3">
-            <p class="text-2xl font-bold text-default">{{ sessionStats.good }}</p>
+          <div class="rounded-xl border border-default bg-muted/50 p-3">
+            <div class="flex items-center justify-center gap-1.5 mb-1">
+              <UIcon name="i-lucide-check" class="size-4 text-blue-500" />
+            </div>
+            <p class="text-2xl font-bold text-blue-500">{{ sessionStats.good }}</p>
             <p class="text-xs text-default-muted">Good</p>
           </div>
-          <div class="rounded-xl border border-default bg-muted p-3">
-            <p class="text-2xl font-bold text-default">{{ sessionStats.easy }}</p>
+          <div class="rounded-xl border border-default bg-muted/50 p-3">
+            <div class="flex items-center justify-center gap-1.5 mb-1">
+              <UIcon name="i-lucide-zap" class="size-4 text-green-500" />
+            </div>
+            <p class="text-2xl font-bold text-green-500">{{ sessionStats.easy }}</p>
             <p class="text-xs text-default-muted">Easy</p>
           </div>
+        </div>
+
+        <!-- Time stats -->
+        <div class="mt-4 flex items-center justify-center gap-6 text-sm text-default-muted">
+          <span class="flex items-center gap-1.5">
+            <UIcon name="i-lucide-clock" class="size-4" />
+            {{ formattedTime }}
+          </span>
+          <span class="flex items-center gap-1.5">
+            <UIcon name="i-lucide-timer" class="size-4" />
+            {{ timePerCard }} / card
+          </span>
         </div>
 
         <div class="mt-6 flex flex-wrap justify-center gap-3">
@@ -375,26 +516,38 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Study Cards -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- Study Cards                                         -->
+    <!-- ═══════════════════════════════════════════════════ -->
     <div v-else class="mx-auto max-w-2xl">
-      <!-- Feature 10: Card position + Feature 5: Timer -->
-      <div class="mb-2 flex items-center justify-between text-sm text-default-muted">
-        <span>{{ cardPositionLabel }}</span>
-        <span><UIcon name="i-lucide-clock" class="inline size-3.5" /> {{ formattedTime }}</span>
+      <!-- Status bar: position + timer -->
+      <div class="mb-3 flex items-center justify-between">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <UIcon name="i-lucide-layers" class="size-3.5" />
+          {{ cardPositionLabel }}
+        </span>
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-default-muted">
+          <span class="relative flex size-2">
+            <span class="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
+            <span class="relative inline-flex size-2 rounded-full bg-primary" />
+          </span>
+          {{ formattedTime }}
+        </span>
       </div>
 
       <!-- Progress Bar -->
-      <div class="mb-4">
-        <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
+      <div class="mb-5">
+        <div class="h-3 w-full overflow-hidden rounded-full bg-gray-200/80 dark:bg-gray-700/50">
           <div
-            class="h-full rounded-full bg-primary transition-all duration-300"
+            class="h-full rounded-full transition-all duration-500 ease-out"
+            style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #8B5CF6); background-size: 200% 100%; animation: gradient-shift 4s ease infinite;"
             :style="{ width: `${progressPercent}%` }"
           />
         </div>
       </div>
 
-      <!-- Feature 6: Previous card button -->
-      <div class="mb-2 flex items-center justify-between">
+      <!-- Navigation row -->
+      <div class="mb-3 flex items-center justify-between">
         <UButton
           v-if="currentIndex > 0"
           variant="ghost"
@@ -406,7 +559,7 @@ onBeforeUnmount(() => {
           Previous <UKbd value="←" class="ml-1" />
         </UButton>
         <span v-else />
-        <!-- Feature 9: Shortcut help button -->
+        <!-- Shortcut help button -->
         <UButton
           variant="ghost"
           color="neutral"
@@ -418,44 +571,63 @@ onBeforeUnmount(() => {
         </UButton>
       </div>
 
+      <!-- ═══ The Flashcard ═══ -->
       <div
-        class="card-base focus-glow cursor-pointer select-none overflow-hidden transition-base hover:shadow-overlay"
-        style="min-height: 14rem; perspective: 1000px;"
+        class="study-card gradient-border cursor-pointer select-none overflow-hidden"
+        style="min-height: 20rem; perspective: 1200px;"
         @click="flip"
       >
         <div
-          class="relative min-h-52 w-full transition-transform duration-300"
-          style="transform-style: preserve-3d;"
+          class="study-card-inner relative w-full transition-transform"
+          style="transform-style: preserve-3d; min-height: 20rem;"
           :style="{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }"
         >
+          <!-- FRONT -->
           <div
-            class="absolute inset-0 flex flex-col justify-center p-6"
+            class="absolute inset-0 flex flex-col justify-center p-8"
             style="backface-visibility: hidden;"
           >
+            <div class="mb-4 flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                <UIcon name="i-lucide-eye" class="size-3" />
+                FRONT
+              </span>
+            </div>
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(displayFront)" />
-            <p class="text-default-muted mt-2 text-center text-sm">
+            <div v-if="currentCard" class="text-default text-lg leading-relaxed" v-html="renderMarkdown(displayFront)" />
+            <p class="text-default-muted mt-4 text-center text-sm">
               Press <UKbd value="Space" class="mx-0.5" /> to flip
             </p>
           </div>
+          <!-- BACK -->
           <div
-            class="absolute inset-0 flex flex-col justify-center p-6"
+            class="absolute inset-0 flex flex-col justify-center p-8"
             style="backface-visibility: hidden; transform: rotateY(180deg);"
           >
+            <div class="mb-4 flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                <UIcon name="i-lucide-lightbulb" class="size-3" />
+                BACK
+              </span>
+            </div>
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(displayBack)" />
-            <p class="text-default-muted mt-2 text-center text-sm">
+            <div v-if="currentCard" class="text-default text-lg leading-relaxed" v-html="renderMarkdown(displayBack)" />
+            <p class="text-default-muted mt-4 text-center text-sm">
               Press <UKbd value="Space" class="mx-0.5" /> to flip back
             </p>
           </div>
         </div>
       </div>
 
-      <div v-if="canRate" class="mt-6 flex flex-wrap justify-center gap-2">
+      <!-- ═══ Rating Buttons ═══ -->
+      <div v-if="canRate" class="mt-6 flex flex-wrap justify-center gap-3">
         <UButton
           color="error"
           variant="soft"
           size="lg"
+          icon="i-lucide-rotate-ccw"
+          class="animate-bounce-in"
+          :style="{ animationDelay: '0ms' }"
           @click="rate(1)"
         >
           Again <UKbd value="1" class="ml-1" />
@@ -464,6 +636,9 @@ onBeforeUnmount(() => {
           color="warning"
           variant="soft"
           size="lg"
+          icon="i-lucide-alert-triangle"
+          class="animate-bounce-in"
+          :style="{ animationDelay: '60ms' }"
           @click="rate(2)"
         >
           Hard <UKbd value="2" class="ml-1" />
@@ -472,6 +647,9 @@ onBeforeUnmount(() => {
           color="primary"
           variant="soft"
           size="lg"
+          icon="i-lucide-check"
+          class="animate-bounce-in"
+          :style="{ animationDelay: '120ms' }"
           @click="rate(3)"
         >
           Good <UKbd value="3" class="ml-1" />
@@ -480,6 +658,9 @@ onBeforeUnmount(() => {
           color="success"
           variant="soft"
           size="lg"
+          icon="i-lucide-zap"
+          class="animate-bounce-in"
+          :style="{ animationDelay: '180ms' }"
           @click="rate(4)"
         >
           Easy <UKbd value="4" class="ml-1" />
@@ -487,7 +668,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Focus mode exit button -->
-      <div v-if="focusMode" class="mt-4 text-center">
+      <div v-if="focusMode" class="mt-6 text-center">
         <UButton
           variant="ghost"
           color="neutral"
@@ -500,7 +681,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Feature 9: Keyboard Shortcuts Modal -->
+    <!-- Keyboard Shortcuts Modal -->
     <UModal v-model:open="showShortcuts" title="Keyboard Shortcuts" description="Available shortcuts during study">
       <template #body>
         <div class="space-y-2 text-sm">
@@ -545,8 +726,33 @@ onBeforeUnmount(() => {
   </UPage>
 </template>
 
-<!-- Feature 19: Confetti animation styles -->
 <style scoped>
+/* ─── Study Card ─── */
+.study-card {
+  @apply bg-white border border-gray-200 dark:bg-gray-900 dark:border-gray-700;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 32px -4px rgb(139 92 246 / 0.2);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.study-card:hover {
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.25), 0 0 48px -4px rgb(139 92 246 / 0.35);
+  transform: translateY(-2px);
+}
+
+.dark .study-card {
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.2), 0 0 40px -4px rgb(139 92 246 / 0.3);
+}
+
+.dark .study-card:hover {
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.35), 0 0 60px -4px rgb(139 92 246 / 0.45);
+}
+
+.study-card-inner {
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Confetti v2 ─── */
 .confetti-container {
   position: fixed;
   inset: 0;
@@ -557,17 +763,22 @@ onBeforeUnmount(() => {
 
 .confetti-piece {
   position: absolute;
-  width: 10px;
-  height: 10px;
   top: -10px;
-  left: calc(var(--i) * 5%);
   opacity: 0;
-  animation: confetti-fall 3s ease-in forwards;
-  animation-delay: calc(var(--i) * 0.1s);
+  animation: confetti-v2 3.5s ease-in forwards;
 }
 
-@keyframes confetti-fall {
-  0% { opacity: 1; top: -10px; transform: rotate(0deg) translateX(0); }
-  100% { opacity: 0; top: 100vh; transform: rotate(720deg) translateX(calc((var(--i) - 10) * 5px)); }
+@media (prefers-reduced-motion: reduce) {
+  .study-card:hover {
+    transform: none;
+  }
+
+  .study-card-inner {
+    transition: none;
+  }
+
+  .confetti-piece {
+    animation: none !important;
+  }
 }
 </style>

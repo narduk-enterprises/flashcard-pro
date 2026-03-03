@@ -4,6 +4,7 @@ definePageMeta({ middleware: 'auth' })
 useSeo({
   title: 'New deck — FlashCardPro',
   description: 'Create a new flashcard deck.',
+  robots: 'noindex, nofollow',
 })
 useWebPageSchema({
   name: 'New deck — FlashCardPro',
