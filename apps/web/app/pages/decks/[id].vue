@@ -15,14 +15,14 @@ useWebPageSchema({
 })
 
 const { user } = useAuth()
-const { decks } = useDecks()
-const { cards, pending, refresh } = useDeckCards(deckId)
+const { deck, pending: deckPending } = useDeck(deckId)
+const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
 const { addCard: addCardMutation } = useAddCard(deckId)
 const { editCard: editCardMutation } = useEditCard()
 const { deleteCard: deleteCardMutation } = useDeleteCard()
 const { bulkImport } = useBulkImportCards(deckId)
 
-const deck = computed(() => decks.value?.find(d => d.id === deckId.value) ?? null)
+const pending = computed(() => deckPending.value || cardsPending.value)
 const isOwner = computed(() => !!deck.value && !!user.value && deck.value.userId === user.value.id)
 
 const showAddCard = ref(false)
