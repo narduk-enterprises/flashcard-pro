@@ -729,7 +729,8 @@ onBeforeUnmount(() => {
 <style scoped>
 /* ─── Study Card ─── */
 .study-card {
-  @apply bg-white border border-gray-200 dark:bg-gray-900 dark:border-gray-700;
+  background-color: var(--color-white, #fff);
+  border: 1px solid var(--color-gray-200, #e5e7eb);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 32px -4px rgb(139 92 246 / 0.2);
   transition: box-shadow 0.3s ease, transform 0.3s ease;
@@ -741,6 +742,8 @@ onBeforeUnmount(() => {
 }
 
 .dark .study-card {
+  background-color: var(--color-gray-900, #111827);
+  border-color: var(--color-gray-700, #374151);
   box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.2), 0 0 40px -4px rgb(139 92 246 / 0.3);
 }
 
