@@ -45,6 +45,7 @@ const formattedTime = computed(() => {
 })
 
 function startTimer() {
+  stopTimer()
   sessionStartTime.value = Date.now()
   timerInterval = setInterval(() => {
     elapsedSeconds.value = Math.floor((Date.now() - sessionStartTime.value) / 1000)
@@ -74,7 +75,15 @@ const scorePercent = computed(() => {
 })
 
 // Feature 8: Missed cards tracking
-const missedCardIds = ref<Set<string>>(new Set())
+const missedCardIds = ref<string[]>([])
+
+function addMissedCard(cardId: string) {
+  if (!missedCardIds.value.includes(cardId)) {
+    missedCardIds.value = [...missedCardIds.value, cardId]
+  }
+}
+
+const missedCardCount = computed(() => missedCardIds.value.length)
 
 // Feature 9: Keyboard shortcut help
 const showShortcuts = ref(false)
@@ -120,7 +129,7 @@ async function rate(r: number) {
     await submitReview({ cardId: currentCard.value.id, rating: r })
     if (r === 1) {
       sessionStats.again++
-      missedCardIds.value.add(currentCard.value.id)
+      addMissedCard(currentCard.value.id)
     } else if (r === 2) {
       sessionStats.hard++
     } else if (r === 3) {
@@ -180,7 +189,7 @@ function restartSession() {
   sessionStats.easy = 0
   currentIndex.value = 0
   flipped.value = false
-  missedCardIds.value.clear()
+  missedCardIds.value = []
   elapsedSeconds.value = 0
   startTimer()
   refresh()
@@ -188,8 +197,8 @@ function restartSession() {
 
 // Feature 8: Study only missed cards
 function studyMissedCards() {
-  const allCards = (cards.value ?? []) as Card[]
-  const missed = allCards.filter(c => missedCardIds.value.has(c.id))
+  const allCards = cardList.value
+  const missed = allCards.filter(c => missedCardIds.value.includes(c.id))
   if (missed.length === 0) return
   shuffledCards.value = missed
   shuffled.value = true
@@ -200,7 +209,7 @@ function studyMissedCards() {
   sessionStats.easy = 0
   currentIndex.value = 0
   flipped.value = false
-  missedCardIds.value.clear()
+  missedCardIds.value = []
   elapsedSeconds.value = 0
   startTimer()
 }
@@ -306,7 +315,7 @@ onBeforeUnmount(() => {
     <div v-else-if="sessionComplete" class="mx-auto max-w-2xl">
       <!-- Feature 19: Confetti -->
       <div class="confetti-container" aria-hidden="true">
-        <div v-for="n in 20" :key="n" class="confetti-piece" :style="{ '--i': n }" />
+        <div v-for="n in 20" :key="n" class="confetti-piece bg-primary size-2.5 rounded-full" :style="{ '--i': n }" />
       </div>
       <div class="card-base p-8 text-center">
         <UIcon name="i-lucide-trophy" class="mx-auto mb-4 size-12 text-primary" />
@@ -351,13 +360,13 @@ onBeforeUnmount(() => {
           </UButton>
           <!-- Feature 8: Study missed cards only -->
           <UButton
-            v-if="missedCardIds.size > 0"
+            v-if="missedCardCount > 0"
             icon="i-lucide-target"
             color="warning"
             variant="soft"
             @click="studyMissedCards"
           >
-            Study missed ({{ missedCardIds.size }})
+            Study missed ({{ missedCardCount }})
           </UButton>
           <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home">
             Dashboard
@@ -540,10 +549,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .confetti-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
   overflow: hidden;
   z-index: 50;
@@ -554,58 +560,14 @@ onBeforeUnmount(() => {
   width: 10px;
   height: 10px;
   top: -10px;
+  left: calc(var(--i) * 5%);
   opacity: 0;
   animation: confetti-fall 3s ease-in forwards;
   animation-delay: calc(var(--i) * 0.1s);
 }
 
-.confetti-piece:nth-child(odd) {
-  background: var(--color-primary);
-  border-radius: 50%;
-}
-
-.confetti-piece:nth-child(even) {
-  background: var(--color-warning, #f59e0b);
-  border-radius: 2px;
-}
-
-.confetti-piece:nth-child(3n) {
-  background: var(--color-success, #22c55e);
-  width: 8px;
-  height: 12px;
-}
-
-.confetti-piece:nth-child(1) { left: 5%; }
-.confetti-piece:nth-child(2) { left: 10%; }
-.confetti-piece:nth-child(3) { left: 15%; }
-.confetti-piece:nth-child(4) { left: 20%; }
-.confetti-piece:nth-child(5) { left: 25%; }
-.confetti-piece:nth-child(6) { left: 30%; }
-.confetti-piece:nth-child(7) { left: 35%; }
-.confetti-piece:nth-child(8) { left: 40%; }
-.confetti-piece:nth-child(9) { left: 45%; }
-.confetti-piece:nth-child(10) { left: 50%; }
-.confetti-piece:nth-child(11) { left: 55%; }
-.confetti-piece:nth-child(12) { left: 60%; }
-.confetti-piece:nth-child(13) { left: 65%; }
-.confetti-piece:nth-child(14) { left: 70%; }
-.confetti-piece:nth-child(15) { left: 75%; }
-.confetti-piece:nth-child(16) { left: 80%; }
-.confetti-piece:nth-child(17) { left: 85%; }
-.confetti-piece:nth-child(18) { left: 90%; }
-.confetti-piece:nth-child(19) { left: 95%; }
-.confetti-piece:nth-child(20) { left: 50%; }
-
 @keyframes confetti-fall {
-  0% {
-    opacity: 1;
-    top: -10px;
-    transform: rotate(0deg) translateX(0);
-  }
-  100% {
-    opacity: 0;
-    top: 100vh;
-    transform: rotate(720deg) translateX(calc((var(--i) - 10) * 5px));
-  }
+  0% { opacity: 1; top: -10px; transform: rotate(0deg) translateX(0); }
+  100% { opacity: 0; top: 100vh; transform: rotate(720deg) translateX(calc((var(--i) - 10) * 5px)); }
 }
 </style>
