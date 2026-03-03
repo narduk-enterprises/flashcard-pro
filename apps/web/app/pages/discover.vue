@@ -11,6 +11,28 @@ useWebPageSchema({
 
 const search = ref('')
 const { decks, pending, error } = useDiscoverDecks(search)
+const { isLoggedIn } = useAuth()
+const { cloneDeck } = useCloneDeck()
+const { addFavorite, removeFavorite, isFavorited } = useFavorites()
+const cloningDeckId = ref<string | null>(null)
+
+async function handleClone(deckId: string) {
+  cloningDeckId.value = deckId
+  try {
+    const cloned = await cloneDeck(deckId)
+    await navigateTo(`/decks/${cloned.id}`)
+  } finally {
+    cloningDeckId.value = null
+  }
+}
+
+async function toggleFavorite(deckId: string) {
+  if (isFavorited(deckId)) {
+    await removeFavorite(deckId)
+  } else {
+    await addFavorite(deckId)
+  }
+}
 </script>
 
 <template>
@@ -67,6 +89,18 @@ const { decks, pending, error } = useDiscoverDecks(search)
           <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
             {{ deck.description }}
           </p>
+          <p class="mt-1 text-xs text-default-muted">
+            {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+          </p>
+          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+            <span
+              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+              :key="tag"
+              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -86,6 +120,27 @@ const { decks, pending, error } = useDiscoverDecks(search)
             variant="soft"
           >
             Manage
+          </UButton>
+          <UButton
+            v-if="isLoggedIn"
+            size="sm"
+            icon="i-lucide-copy"
+            color="neutral"
+            variant="soft"
+            :loading="cloningDeckId === deck.id"
+            @click="handleClone(deck.id)"
+          >
+            Clone
+          </UButton>
+          <UButton
+            v-if="isLoggedIn"
+            size="sm"
+            :icon="isFavorited(deck.id) ? 'i-lucide-heart' : 'i-lucide-heart'"
+            :color="isFavorited(deck.id) ? 'primary' : 'neutral'"
+            :variant="isFavorited(deck.id) ? 'soft' : 'ghost'"
+            @click="toggleFavorite(deck.id)"
+          >
+            {{ isFavorited(deck.id) ? 'Saved' : 'Save' }}
           </UButton>
         </div>
       </li>
