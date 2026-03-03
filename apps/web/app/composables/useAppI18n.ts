@@ -82,7 +82,7 @@ const translations: Record<string, Record<string, string>> = {
 
 const STORAGE_KEY = 'flashcard-pro:locale'
 
-export function useI18n() {
+export function useAppI18n() {
   const locale = useState<string>('i18n:locale', () => 'en')
 
   function setLocale(newLocale: string) {
