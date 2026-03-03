@@ -9,7 +9,7 @@ export function useAuth() {
 
   async function fetchUser() {
     try {
-      const data = await $fetch<{ user: AuthUser }>('/api/auth/me', {
+      const data = await $fetch<{ user: AuthUser | null }>('/api/auth/me', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
       })
       user.value = data.user
