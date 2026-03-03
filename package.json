@@ -21,7 +21,11 @@
     "test:e2e": "playwright test",
     "test:e2e:prod": "BASE_URL=https://flashcard-pro.narduk.workers.dev playwright test",
     "generate:favicons": "npx tsx tools/generate-favicons.ts",
-    "prod:cleanup-seed": "doppler run -- npx tsx tools/cleanup-e2e-and-seed-prod.ts"
+    "prod:cleanup-seed": "doppler run -- npx tsx tools/cleanup-e2e-and-seed-prod.ts",
+    "predev": "node tools/check-setup.js",
+    "prebuild": "node tools/check-setup.js",
+    "predeploy": "node tools/check-setup.js",
+    "update-layer": "npx tsx tools/update-layer.ts"
   },
   "pnpm": {
     "overrides": {
@@ -51,6 +55,7 @@
     "drizzle-kit": "^0.31.9",
     "googleapis": "^171.4.0",
     "sharp": "^0.34.5",
-    "turbo": "^2.8.12"
+    "turbo": "^2.8.12",
+    "tsx": "^4.21.0"
   }
 }

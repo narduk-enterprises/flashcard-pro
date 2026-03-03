@@ -37,7 +37,7 @@
 
 ## 3. Did Nuxt layer inheritance work seamlessly?
 
-**Mostly.** The app extends `@loganrenz/narduk-nuxt-template-layer` and correctly gets:
+**Mostly.** The app extends `@narduk-enterprises/narduk-nuxt-template-layer` and correctly gets:
 
 - Nuxt UI 4, Nitro cloudflare-module, Drizzle, SEO composables, CSRF, security headers, base CSS, etc.
 - No need to duplicate layer components or server utils.
