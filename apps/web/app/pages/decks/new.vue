@@ -11,10 +11,11 @@ useWebPageSchema({
   description: 'Create a new flashcard deck.',
 })
 
-const state = reactive({ name: '', description: '', tags: '', isPublic: true })
+const state = reactive({ name: '', description: '', tags: '', isPublic: true, categoryId: '' as undefined | string })
 const submitting = ref(false)
 const error = ref('')
 const { createDeck } = useCreateDeck()
+const { categories } = useCategories()
 
 async function submit() {
   if (!state.name.trim()) {
@@ -24,7 +25,7 @@ async function submit() {
   error.value = ''
   submitting.value = true
   try {
-    const deck = await createDeck({ name: state.name, description: state.description, tags: state.tags, isPublic: state.isPublic })
+    const deck = await createDeck({ name: state.name, description: state.description, tags: state.tags, isPublic: state.isPublic, categoryId: state.categoryId || undefined })
     await navigateTo(`/decks/${deck.id}`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to create deck.'
@@ -50,6 +51,15 @@ async function submit() {
       </UFormField>
       <UFormField label="Description" name="description">
         <UTextarea v-model="state.description" placeholder="Optional description" :rows="2" />
+      </UFormField>
+      <UFormField label="Category" name="categoryId" description="Optional category to group this deck under.">
+        <USelectMenu
+          v-model="state.categoryId"
+          :items="categories"
+          value-key="id"
+          label-key="name"
+          placeholder="Select a category"
+        />
       </UFormField>
       <UFormField label="Tags" name="tags" description="Comma-separated tags (e.g. spanish, verbs, language)">
         <UInput v-model="state.tags" placeholder="e.g. spanish, verbs, language" />

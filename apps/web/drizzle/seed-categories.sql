@@ -1,0 +1,24 @@
+-- Seed Categories and Decks
+DELETE FROM categories;
+DELETE FROM decks WHERE user_id IS NULL;
+DELETE FROM cards WHERE deck_id IN (SELECT id FROM decks WHERE user_id IS NULL);
+INSERT INTO categories (id, name, slug, icon, description, created_at) VALUES ('de41af02-698a-4652-80e6-ce7bb25fec82', 'Programming', 'programming', 'i-lucide-code', 'Software engineering, languages, and frameworks.', '2026-03-03T07:06:52.802Z');
+INSERT INTO categories (id, name, slug, icon, description, created_at) VALUES ('b603c0e4-8d76-4bee-8b5f-66b52191ddc5', 'Languages', 'languages', 'i-lucide-languages', 'Learn to speak new languages.', '2026-03-03T07:06:52.802Z');
+INSERT INTO categories (id, name, slug, icon, description, created_at) VALUES ('8f480e8d-5f7d-4be3-8357-1a0b58b735dd', 'Science', 'science', 'i-lucide-test-tube', 'Biology, Physics, Chemistry, and more.', '2026-03-03T07:06:52.802Z');
+INSERT INTO categories (id, name, slug, icon, description, created_at) VALUES ('a65024f0-951f-40b6-bab9-e46d1ba37c24', 'History', 'history', 'i-lucide-landmark', 'Historical events, figures, and dates.', '2026-03-03T07:06:52.802Z');
+INSERT INTO categories (id, name, slug, icon, description, created_at) VALUES ('e1f63395-5329-43fc-a132-c384b4db9a04', 'Geography', 'geography', 'i-lucide-globe', 'Countries, capitals, and natural landmarks.', '2026-03-03T07:06:52.802Z');
+INSERT INTO decks (id, user_id, category_id, name, description, created_at) VALUES ('832c60b2-116b-4580-a026-7d429faaa95e', NULL, 'de41af02-698a-4652-80e6-ce7bb25fec82', 'JavaScript Basics', 'Variables, types, and functions in JS.', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('54e00de0-de64-4d2e-af32-532841f04b21', '832c60b2-116b-4580-a026-7d429faaa95e', 'What keyword declares a constant?', 'const', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('745cc2b9-0ba7-401d-804b-a5bfda16e7ca', '832c60b2-116b-4580-a026-7d429faaa95e', 'What is typeof null in JavaScript?', '"object" (historic bug)', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('961e9e25-86c6-4d10-b4a8-d72b025a17b6', '832c60b2-116b-4580-a026-7d429faaa95e', 'How do you define an arrow function?', 'const fn = () => {}', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('5273eff1-af76-45c9-8e72-1c3d62e56bb2', '832c60b2-116b-4580-a026-7d429faaa95e', 'What does === compare?', 'Value and type (no coercion)', '2026-03-03T07:06:52.802Z');
+INSERT INTO decks (id, user_id, category_id, name, description, created_at) VALUES ('37e3b76a-6623-4964-a25f-7241b3319437', NULL, 'de41af02-698a-4652-80e6-ce7bb25fec82', 'Vue 3 Composition API', 'ref, reactive, and composables.', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('0baeb294-1c04-4e49-895a-1297131ca994', '37e3b76a-6623-4964-a25f-7241b3319437', 'Which function makes a reactive ref?', 'ref()', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('b00a7d7f-ee33-4520-8ea9-2098ecaba0be', '37e3b76a-6623-4964-a25f-7241b3319437', 'reactive() is for ___.', 'Objects (ref for primitives)', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('1a44104d-7964-4147-ae40-4ba610f2c981', '37e3b76a-6623-4964-a25f-7241b3319437', 'How do you read ref value in script?', '.value', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('edd45681-d99e-4e96-a826-82251382a874', '37e3b76a-6623-4964-a25f-7241b3319437', 'Lifecycle hook for mounted?', 'onMounted()', '2026-03-03T07:06:52.802Z');
+INSERT INTO decks (id, user_id, category_id, name, description, created_at) VALUES ('2d265c99-3682-40c7-9907-60c05f828844', NULL, 'b603c0e4-8d76-4bee-8b5f-66b52191ddc5', 'Spanish 101', 'Common phrases.', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('1ddef32e-e359-4b77-a0c2-6cecf647477a', '2d265c99-3682-40c7-9907-60c05f828844', 'Hello', 'Hola', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('1fc1f185-497f-47d8-bb7a-6dc5722a2f3c', '2d265c99-3682-40c7-9907-60c05f828844', 'Thank you', 'Gracias', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('46d5c83a-c1ac-43b8-9875-8e41fc318f04', '2d265c99-3682-40c7-9907-60c05f828844', 'Good morning', 'Buenos días', '2026-03-03T07:06:52.802Z');
+INSERT INTO cards (id, deck_id, front, back, created_at) VALUES ('7fcd1e86-6341-4449-8b70-6567fafa59ae', '2d265c99-3682-40c7-9907-60c05f828844', 'How are you?', '¿Cómo estás?', '2026-03-03T07:06:52.802Z');

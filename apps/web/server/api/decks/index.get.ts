@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { like, or, desc, eq, sql } from 'drizzle-orm'
-import { decks, cards } from '../../database/schema'
+import { decks, cards, categories } from '../../database/schema'
 
 const querySchema = z.object({
   q: z.string().optional(),
@@ -16,6 +16,8 @@ export default defineEventHandler(async (event) => {
     .select({
       id: decks.id,
       userId: decks.userId,
+      categoryId: decks.categoryId,
+      categoryName: categories.name,
       name: decks.name,
       description: decks.description,
       tags: decks.tags,
@@ -24,6 +26,7 @@ export default defineEventHandler(async (event) => {
       cardCount: sql<number>`count(${cards.id})`.as('card_count'),
     })
     .from(decks)
+    .leftJoin(categories, eq(decks.categoryId, categories.id))
     .leftJoin(cards, eq(decks.id, cards.deckId))
     .groupBy(decks.id)
     .orderBy(desc(decks.createdAt))
