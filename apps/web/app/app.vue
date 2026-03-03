@@ -3,6 +3,9 @@ const route = useRoute()
 const colorMode = useColorMode()
 const appName = useRuntimeConfig().public.appName || ''
 const { user, isLoggedIn, logout } = useAuth()
+const isLoggingOut = ref(false)
+
+const appDisplayName = computed(() => appName || 'FlashCardPro')
 
 const colorModeIcon = computed(() => {
   if (colorMode.preference === 'system') return 'i-lucide-monitor'
@@ -25,6 +28,20 @@ const mobileMenuOpen = ref(false)
 watch(route, () => {
   mobileMenuOpen.value = false
 })
+
+function isActiveRoute(path: string) {
+  return route.path === path
+}
+
+async function handleLogout() {
+  isLoggingOut.value = true
+  try {
+    await logout()
+    await navigateTo('/')
+  } finally {
+    isLoggingOut.value = false
+  }
+}
 </script>
 
 <template>
@@ -36,7 +53,7 @@ watch(route, () => {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <NuxtLink to="/" class="flex items-center gap-2.5 group transition-opacity hover:opacity-90">
             <img src="/logo.png" alt="" class="size-8 rounded-xl object-cover shadow-card" width="32" height="32">
-            <span class="font-display font-semibold text-lg hidden sm:block">{{ appName || 'FlashCardPro' }}</span>
+            <span class="font-display font-semibold text-lg hidden sm:block">{{ appDisplayName }}</span>
           </NuxtLink>
 
           <!-- Desktop nav -->
@@ -46,9 +63,10 @@ watch(route, () => {
               :key="item.to"
               :to="item.to"
               class="px-3 py-2 text-sm font-medium rounded-lg transition-colors"
-              :class="route.path === item.to
+              :class="isActiveRoute(item.to)
                 ? 'text-primary bg-primary/10'
                 : 'text-muted hover:text-default hover:bg-elevated'"
+              :aria-current="isActiveRoute(item.to) ? 'page' : undefined"
             >
               {{ item.label }}
             </NuxtLink>
@@ -71,7 +89,9 @@ watch(route, () => {
                 size="sm"
                 variant="ghost"
                 color="neutral"
-                @click="logout().then(() => { void navigateTo('/') })"
+                :loading="isLoggingOut"
+                :disabled="isLoggingOut"
+                @click="handleLogout"
               >
                 Log out
               </UButton>
@@ -91,7 +111,15 @@ watch(route, () => {
               aria-label="Toggle color mode"
               @click="cycleColorMode"
             />
-            <UButton color="neutral" variant="ghost" class="md:hidden p-2 rounded-lg hover:bg-elevated" aria-label="Toggle navigation menu" @click="mobileMenuOpen = !mobileMenuOpen">
+            <UButton
+              color="neutral"
+              variant="ghost"
+              class="md:hidden p-2 rounded-lg hover:bg-elevated"
+              aria-label="Toggle navigation menu"
+              :aria-expanded="mobileMenuOpen"
+              aria-controls="mobile-nav-menu"
+              @click="mobileMenuOpen = !mobileMenuOpen"
+            >
               <UIcon :name="mobileMenuOpen ? 'i-lucide-x' : 'i-lucide-menu'" class="size-5" />
             </UButton>
           </div>
@@ -99,15 +127,16 @@ watch(route, () => {
 
         <!-- Mobile nav -->
         <Transition name="slide-down">
-          <div v-if="mobileMenuOpen" class="md:hidden border-t border-default px-4 py-3 space-y-1">
+          <div id="mobile-nav-menu" v-if="mobileMenuOpen" class="md:hidden border-t border-default px-4 py-3 space-y-1">
             <NuxtLink
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
               class="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors"
-              :class="route.path === item.to
+              :class="isActiveRoute(item.to)
                 ? 'text-primary bg-primary/10'
                 : 'text-muted hover:text-default hover:bg-elevated'"
+              :aria-current="isActiveRoute(item.to) ? 'page' : undefined"
             >
               <UIcon :name="item.icon" class="size-4" />
               {{ item.label }}
@@ -155,7 +184,7 @@ watch(route, () => {
       <div class="border-t border-default py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p class="text-center text-sm text-muted">
-            {{ appName || 'FlashCardPro' }} &middot; Nuxt UI 4 &middot; Cloudflare Workers &middot; <NuxtTime :datetime="new Date()" year="numeric" />
+            {{ appDisplayName }} &middot; Nuxt UI 4 &middot; Cloudflare Workers &middot; <NuxtTime :datetime="new Date()" year="numeric" />
           </p>
         </div>
       </div>
