@@ -85,7 +85,6 @@ const sortedFilteredCards = computed(() => {
 // Feature 13: Copy card to clipboard
 const copiedCardId = ref<string | null>(null)
 async function copyCardContent(card: Card) {
-  if (!import.meta.client) return
   const text = `Front: ${card.front}\nBack: ${card.back}`
   await navigator.clipboard.writeText(text)
   copiedCardId.value = card.id

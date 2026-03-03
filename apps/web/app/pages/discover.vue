@@ -132,14 +132,17 @@ async function toggleFavorite(deckId: string) {
           </p>
           <!-- Feature 16: Clickable tags -->
           <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
-            <button
+            <UButton
               v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
               :key="tag"
-              class="inline-block cursor-pointer rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted transition-colors hover:bg-primary/10 hover:text-primary"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              class="rounded-full"
               @click="searchByTag(tag)"
             >
               {{ tag }}
-            </button>
+            </UButton>
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
