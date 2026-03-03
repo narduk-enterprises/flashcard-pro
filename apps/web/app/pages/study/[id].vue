@@ -129,7 +129,7 @@ function onStudyKeydown(event: KeyboardEvent) {
     return
   }
   if (sessionComplete.value) return
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return
   if (event.key === ' ' || event.key === 'Enter') {
     event.preventDefault()
     flip()

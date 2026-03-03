@@ -24,6 +24,8 @@ export default defineEventHandler(async (event) => {
     userId: user.id,
     name: sourceDeck.name,
     description: sourceDeck.description,
+    tags: sourceDeck.tags,
+    isPublic: sourceDeck.isPublic,
   })
   if (sourceCards.length > 0) {
     const newCards = sourceCards.map(c => ({

@@ -99,11 +99,9 @@ export function useI18n() {
   const availableLocales = Object.keys(translations)
 
   onMounted(() => {
-    if (import.meta.client) {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved && translations[saved]) {
-        locale.value = saved
-      }
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved && translations[saved]) {
+      locale.value = saved
     }
   })
 

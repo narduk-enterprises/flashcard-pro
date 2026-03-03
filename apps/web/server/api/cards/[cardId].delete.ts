@@ -1,5 +1,5 @@
-import { eq } from 'drizzle-orm'
-import { cards, decks } from '../../database/schema'
+import { eq, and } from 'drizzle-orm'
+import { cards, decks, collaborators } from '../../database/schema'
 import { requireUser } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -10,8 +10,13 @@ export default defineEventHandler(async (event) => {
   const [card] = await db.select().from(cards).where(eq(cards.id, cardId))
   if (!card) throw createError({ statusCode: 404, message: 'Card not found' })
   const [deck] = await db.select().from(decks).where(eq(decks.id, card.deckId))
-  if (!deck || deck.userId !== user.id) {
-    throw createError({ statusCode: 403, message: 'Only the deck owner can delete cards' })
+  if (!deck) throw createError({ statusCode: 404, message: 'Deck not found' })
+  const isOwner = deck.userId === user.id
+  const [isCollab] = await db.select().from(collaborators).where(
+    and(eq(collaborators.deckId, deck.id), eq(collaborators.userId, user.id)),
+  )
+  if (!isOwner && !isCollab) {
+    throw createError({ statusCode: 403, message: 'Only the deck owner or collaborators can delete cards' })
   }
   await db.delete(cards).where(eq(cards.id, cardId))
   return { ok: true }
