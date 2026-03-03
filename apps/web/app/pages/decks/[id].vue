@@ -18,6 +18,8 @@ const { user } = useAuth()
 const { decks } = useDecks()
 const { cards, pending, refresh } = useDeckCards(deckId)
 const { addCard: addCardMutation } = useAddCard(deckId)
+const { editCard: editCardMutation } = useEditCard()
+const { deleteCard: deleteCardMutation } = useDeleteCard()
 
 const deck = computed(() => decks.value?.find(d => d.id === deckId.value) ?? null)
 const isOwner = computed(() => !!deck.value && !!user.value && deck.value.userId === user.value.id)
@@ -27,6 +29,16 @@ const newFront = ref('')
 const newBack = ref('')
 const submitting = ref(false)
 const addError = ref('')
+
+// Edit card state
+const editingCardId = ref<string | null>(null)
+const editFront = ref('')
+const editBack = ref('')
+const editSubmitting = ref(false)
+const editError = ref('')
+
+// Delete card state
+const deletingCardId = ref<string | null>(null)
 
 async function addCard() {
   if (!newFront.value.trim() || !newBack.value.trim()) {
@@ -51,6 +63,47 @@ async function addCard() {
 function cancelAddCard() {
   showAddCard.value = false
   addError.value = ''
+}
+
+function startEditCard(card: Card) {
+  editingCardId.value = card.id
+  editFront.value = card.front
+  editBack.value = card.back
+  editError.value = ''
+}
+
+function cancelEditCard() {
+  editingCardId.value = null
+  editError.value = ''
+}
+
+async function saveEditCard() {
+  if (!editFront.value.trim() || !editBack.value.trim()) {
+    editError.value = 'Front and back are required.'
+    return
+  }
+  if (!editingCardId.value) return
+  editError.value = ''
+  editSubmitting.value = true
+  try {
+    await editCardMutation(editingCardId.value, { front: editFront.value, back: editBack.value })
+    editingCardId.value = null
+    await refresh()
+  } catch (e: unknown) {
+    editError.value = e instanceof Error ? e.message : 'Failed to update card.'
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+async function deleteCard(cardId: string) {
+  deletingCardId.value = cardId
+  try {
+    await deleteCardMutation(cardId)
+    await refresh()
+  } finally {
+    deletingCardId.value = null
+  }
 }
 </script>
 
@@ -124,18 +177,63 @@ function cancelAddCard() {
           :key="card.id"
           class="card-base flex flex-col gap-2 p-4 transition-base"
         >
-          <div class="grid gap-2 sm:grid-cols-2">
-            <div>
-              <p class="text-default-muted text-xs font-medium uppercase">Front</p>
-              <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown (escapeHtml + limited tags) -->
-              <div class="prose prose-sm dark:prose-invert mt-1 max-w-none wrap-break-word" v-html="renderMarkdown(card.front)" />
+          <!-- Edit mode -->
+          <template v-if="editingCardId === card.id">
+            <div class="space-y-3">
+              <UFormField label="Front (Markdown supported)">
+                <UTextarea v-model="editFront" :rows="3" />
+              </UFormField>
+              <UFormField label="Back (Markdown supported)">
+                <UTextarea v-model="editBack" :rows="3" />
+              </UFormField>
+              <p v-if="editError" class="text-sm text-muted">{{ editError }}</p>
+              <div class="flex flex-wrap gap-2">
+                <UButton :loading="editSubmitting" color="primary" size="sm" @click="saveEditCard">
+                  Save
+                </UButton>
+                <UButton variant="ghost" color="neutral" size="sm" @click="cancelEditCard">
+                  Cancel
+                </UButton>
+              </div>
             </div>
-            <div>
-              <p class="text-default-muted text-xs font-medium uppercase">Back</p>
-              <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown (escapeHtml + limited tags) -->
-              <div class="prose prose-sm dark:prose-invert mt-1 max-w-none wrap-break-word" v-html="renderMarkdown(card.back)" />
+          </template>
+
+          <!-- View mode -->
+          <template v-else>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div>
+                <p class="text-default-muted text-xs font-medium uppercase">Front</p>
+                <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown (escapeHtml + limited tags) -->
+                <div class="prose prose-sm dark:prose-invert mt-1 max-w-none wrap-break-word" v-html="renderMarkdown(card.front)" />
+              </div>
+              <div>
+                <p class="text-default-muted text-xs font-medium uppercase">Back</p>
+                <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown (escapeHtml + limited tags) -->
+                <div class="prose prose-sm dark:prose-invert mt-1 max-w-none wrap-break-word" v-html="renderMarkdown(card.back)" />
+              </div>
             </div>
-          </div>
+            <div v-if="isOwner" class="flex gap-2 pt-1">
+              <UButton
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                icon="i-lucide-pencil"
+                @click="startEditCard(card)"
+              >
+                Edit
+              </UButton>
+              <UButton
+                size="xs"
+                variant="ghost"
+                color="error"
+                icon="i-lucide-trash-2"
+                :loading="deletingCardId === card.id"
+                @click="deleteCard(card.id)"
+              >
+                Delete
+              </UButton>
+            </div>
+          </template>
         </li>
       </ul>
 

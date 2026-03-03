@@ -4,6 +4,7 @@ export interface Deck {
   name: string
   description: string
   createdAt: string
+  cardCount?: number
 }
 
 export interface Card {
