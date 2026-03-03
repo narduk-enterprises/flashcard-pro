@@ -10,7 +10,7 @@ useWebPageSchema({
   description: 'Create a new flashcard deck.',
 })
 
-const state = reactive({ name: '', description: '', tags: '' })
+const state = reactive({ name: '', description: '', tags: '', isPublic: true })
 const submitting = ref(false)
 const error = ref('')
 const { createDeck } = useCreateDeck()
@@ -23,7 +23,7 @@ async function submit() {
   error.value = ''
   submitting.value = true
   try {
-    const deck = await createDeck({ name: state.name, description: state.description, tags: state.tags })
+    const deck = await createDeck({ name: state.name, description: state.description, tags: state.tags, isPublic: state.isPublic })
     await navigateTo(`/decks/${deck.id}`)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to create deck.'
@@ -52,6 +52,15 @@ async function submit() {
       </UFormField>
       <UFormField label="Tags" name="tags" description="Comma-separated tags (e.g. spanish, verbs, language)">
         <UInput v-model="state.tags" placeholder="e.g. spanish, verbs, language" />
+      </UFormField>
+      <!-- Feature 18: Public/Private toggle -->
+      <UFormField label="Visibility" name="isPublic" description="Public decks can be discovered and studied by others.">
+        <div class="flex items-center gap-3">
+          <USwitch v-model="state.isPublic" />
+          <span class="text-sm text-default-muted">
+            {{ state.isPublic ? 'Public — visible to everyone' : 'Private — only visible to you' }}
+          </span>
+        </div>
       </UFormField>
       <p v-if="error" class="text-sm text-muted">
         {{ error }}

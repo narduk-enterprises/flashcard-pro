@@ -16,6 +16,24 @@ const { cloneDeck } = useCloneDeck()
 const { addFavorite, removeFavorite, isFavorited } = useFavorites()
 const cloningDeckId = ref<string | null>(null)
 
+// Feature 16: Tag click filtering
+function searchByTag(tag: string) {
+  search.value = tag
+}
+
+// Feature 17: Discover sort options
+const discoverSortBy = ref<'newest' | 'cards'>('newest')
+const sortedDiscoverDecks = computed(() => {
+  if (!decks.value) return []
+  const copy = [...decks.value]
+  if (discoverSortBy.value === 'cards') {
+    copy.sort((a, b) => (b.cardCount ?? 0) - (a.cardCount ?? 0))
+  } else {
+    copy.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }
+  return copy
+})
+
 async function handleClone(deckId: string) {
   cloningDeckId.value = deckId
   try {
@@ -48,7 +66,7 @@ async function toggleFavorite(deckId: string) {
       </template>
     </UPageHeader>
 
-    <div class="mb-6">
+    <div class="mb-6 flex flex-wrap items-center gap-3">
       <UInput
         v-model="search"
         placeholder="Search decks..."
@@ -56,6 +74,26 @@ async function toggleFavorite(deckId: string) {
         icon="i-lucide-search"
         class="max-w-md"
       />
+      <!-- Feature 17: Sort controls -->
+      <div class="flex items-center gap-1">
+        <span class="text-xs text-default-muted">Sort:</span>
+        <UButton
+          size="xs"
+          :variant="discoverSortBy === 'newest' ? 'soft' : 'ghost'"
+          :color="discoverSortBy === 'newest' ? 'primary' : 'neutral'"
+          @click="discoverSortBy = 'newest'"
+        >
+          Newest
+        </UButton>
+        <UButton
+          size="xs"
+          :variant="discoverSortBy === 'cards' ? 'soft' : 'ghost'"
+          :color="discoverSortBy === 'cards' ? 'primary' : 'neutral'"
+          @click="discoverSortBy = 'cards'"
+        >
+          Most cards
+        </UButton>
+      </div>
     </div>
 
     <div v-if="error" class="rounded-lg border border-default bg-muted p-4">
@@ -77,7 +115,7 @@ async function toggleFavorite(deckId: string) {
 
     <ul v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <li
-        v-for="(deck, i) in decks"
+        v-for="(deck, i) in sortedDiscoverDecks"
         :key="deck.id"
         class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
         :style="{ animationDelay: `${i * 50}ms` }"
@@ -92,14 +130,16 @@ async function toggleFavorite(deckId: string) {
           <p class="mt-1 text-xs text-default-muted">
             {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
           </p>
+          <!-- Feature 16: Clickable tags -->
           <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
-            <span
+            <button
               v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
               :key="tag"
-              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+              class="inline-block cursor-pointer rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted transition-colors hover:bg-primary/10 hover:text-primary"
+              @click="searchByTag(tag)"
             >
               {{ tag }}
-            </span>
+            </button>
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
