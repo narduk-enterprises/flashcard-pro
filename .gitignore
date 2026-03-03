@@ -47,3 +47,8 @@ packages/eslint-config/*/dist/
 doppler.json
 doppler.yaml
 lint-results.txt
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
