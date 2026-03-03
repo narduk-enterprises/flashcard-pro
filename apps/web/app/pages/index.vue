@@ -10,6 +10,8 @@ useWebPageSchema({
 })
 
 const { decks, pending, error } = useDecks()
+const { isLoggedIn } = useAuth()
+const { stats } = useStudyStats()
 </script>
 
 <template>
@@ -27,6 +29,26 @@ const { decks, pending, error } = useDecks()
         </UButton>
       </template>
     </UPageHeader>
+
+    <!-- Study Statistics -->
+    <div v-if="isLoggedIn && stats && stats.totalReviews > 0" class="mb-6 grid gap-3 sm:grid-cols-4">
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalDecks }}</p>
+        <p class="text-xs text-default-muted">Decks</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalCards }}</p>
+        <p class="text-xs text-default-muted">Cards</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalReviews }}</p>
+        <p class="text-xs text-default-muted">Reviews</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.averageRating }}</p>
+        <p class="text-xs text-default-muted">Avg Rating</p>
+      </div>
+    </div>
 
     <div v-if="error" class="rounded-lg border border-default bg-muted p-4">
       <p class="text-muted">Failed to load decks. Check the console and try again.</p>
@@ -57,6 +79,18 @@ const { decks, pending, error } = useDecks()
           <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
             {{ deck.description }}
           </p>
+          <p class="mt-1 text-xs text-default-muted">
+            {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
+          </p>
+          <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+            <span
+              v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
+              :key="tag"
+              class="inline-block rounded-full bg-muted px-2 py-0.5 text-xs text-default-muted"
+            >
+              {{ tag }}
+            </span>
+          </div>
         </div>
         <div class="flex flex-wrap gap-2">
           <UButton

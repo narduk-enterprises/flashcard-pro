@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { like, or, desc } from 'drizzle-orm'
-import { decks } from '../../database/schema'
+import { like, or, desc, eq, sql } from 'drizzle-orm'
+import { decks, cards } from '../../database/schema'
 
 const querySchema = z.object({
   q: z.string().optional(),
@@ -11,15 +11,26 @@ export default defineEventHandler(async (event) => {
   const query = querySchema.parse(raw)
   const q = (query.q ?? '').trim()
   const db = useDatabase(event)
+
+  const baseQuery = db
+    .select({
+      id: decks.id,
+      userId: decks.userId,
+      name: decks.name,
+      description: decks.description,
+      tags: decks.tags,
+      isPublic: decks.isPublic,
+      createdAt: decks.createdAt,
+      cardCount: sql<number>`count(${cards.id})`.as('card_count'),
+    })
+    .from(decks)
+    .leftJoin(cards, eq(decks.id, cards.deckId))
+    .groupBy(decks.id)
+    .orderBy(desc(decks.createdAt))
+
   if (!q) {
-    const list = await db.select().from(decks).orderBy(desc(decks.createdAt))
-    return list
+    return await baseQuery
   }
   const pattern = `%${q.replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
-  const list = await db
-    .select()
-    .from(decks)
-    .where(or(like(decks.name, pattern), like(decks.description, pattern)))
-    .orderBy(desc(decks.createdAt))
-  return list
+  return await baseQuery.where(or(like(decks.name, pattern), like(decks.description, pattern)))
 })
