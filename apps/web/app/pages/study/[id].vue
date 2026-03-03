@@ -13,12 +13,12 @@ useWebPageSchema({
   description: 'Study this deck with spaced repetition.',
 })
 
-const { decks } = useDecks()
-const { cards, pending, refresh } = useDeckCards(deckId)
+const { deck, pending: deckPending } = useDeck(deckId)
+const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
 const { render: renderMarkdown } = useMarkdown()
 const { submitReview } = useSubmitReview()
 
-const deck = computed(() => decks.value?.find(d => d.id === deckId.value) ?? null)
+const pending = computed(() => deckPending.value || cardsPending.value)
 const shuffled = ref(false)
 const shuffledCards = ref<Card[]>([])
 const cardList = computed(() => {
