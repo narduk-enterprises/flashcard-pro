@@ -22,7 +22,6 @@ import { fileURLToPath } from 'node:url'
  * 4. Resets README.md (skipped in --repair mode)
  * 5. Provisions Doppler project and syncs hub secrets (additive only)
  * 6. Sets Doppler CI token on GitHub (skips if token exists)
- * 6b. Configures local Doppler (doppler.yaml) so `doppler run` works without flags (skipped in CI)
  * 7. Runs analytics provisioning pipeline (each service skips if configured)
  * 8. Generates favicon assets for apps/web/public from source SVG
  * 9. Cleans up template-specific example apps and configuration.
@@ -93,7 +92,7 @@ const LAYER_PACKAGE_PLACEHOLDER = '__LAYER_PKG_PLACEHOLDER__'
 const REPLACEMENTS = [
   // 1. Temporarily replace the protected layer package name with a safe placeholder
   { from: /@narduk-enterprises\/narduk-nuxt-template-layer/g, to: LAYER_PACKAGE_PLACEHOLDER },
-  
+
   // 2. Perform all standard project renames
   { from: /narduk-nuxt-template-examples-db/g, to: `${APP_NAME}-examples-db` },
   { from: /narduk-nuxt-template-examples/g, to: `${APP_NAME}-examples` },
@@ -106,7 +105,7 @@ const REPLACEMENTS = [
   { from: /Nuxt 4 Demo/g, to: DISPLAY_NAME },
   // Template-specific site description — replace with a generic one the agent can customize.
   { from: /A production-ready demo template showcasing Nuxt 4, Nuxt UI 4, Tailwind CSS 4, and Cloudflare Workers with D1 database\./g, to: `${DISPLAY_NAME} — powered by Nuxt 4 and Cloudflare Workers.` },
-  
+
   // 3. Restore the protected layer package name
   { from: new RegExp(LAYER_PACKAGE_PLACEHOLDER, 'g'), to: LAYER_PACKAGE },
 ]
@@ -119,12 +118,12 @@ const ROOT_DIR = path.resolve(__dirname, '..')
 async function walkDir(dir: string): Promise<string[]> {
   const omitDirs = new Set(['node_modules', '.git', '.nuxt', '.output', 'dist', 'playwright-report', 'test-results', '.DS_Store'])
   const files: string[] = []
-  
+
   const entries = await fs.readdir(dir, { withFileTypes: true })
-  
+
   for (const entry of entries) {
     if (omitDirs.has(entry.name)) continue
-    
+
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
       files.push(...await walkDir(fullPath))
@@ -164,6 +163,14 @@ async function main() {
     // Ignore
   }
 
+  // Determine if there is a target (non-template) git remote available
+  let hasGitRemote = false
+  try {
+    const remotesCheck = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' }).trim()
+    hasGitRemote = remotesCheck.split('\n').some(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
+  } catch { /* no git or no remotes */ }
+
+
   // Pre-flight check: Ensure git is initialized and remote is set properly
   if (!REPAIR_MODE) {
     let remotesCheck = ''
@@ -194,7 +201,7 @@ async function main() {
   }
 
   console.log(`\n🚀 Initializing: ${DISPLAY_NAME} (${APP_NAME})${REPAIR_MODE ? ' [REPAIR MODE]' : ''}`)
-  
+
   // 1. Recursive String Replacement
   if (REPAIR_MODE) {
     console.log('\nStep 1/10: Replacing boilerplate strings... ⏭ skipped (--repair)')
@@ -322,7 +329,11 @@ async function main() {
   let appDirs: string[] = []
   try {
     const entries = await fs.readdir(appsDir, { withFileTypes: true })
-    appDirs = entries.filter(e => e.isDirectory()).map(e => e.name)
+    // Only provision databases for actual production apps, not examples.
+    appDirs = entries
+      .filter(e => e.isDirectory())
+      .map(e => e.name)
+      .filter(name => name !== 'showcase' && !name.startsWith('example-'))
   } catch {
     appDirs = []
   }
@@ -428,30 +439,72 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
       }
     }
 
-    // Only set hub references for keys that aren't already configured
+    // Set hub references — overwrites stale direct values with cross-project refs
     try {
       const existing = getDopplerSecretNames(APP_NAME, 'prd')
-      const hubSecrets: Record<string, string> = {
+
+      // Hub cross-project references (always enforce these)
+      const hubRefs: Record<string, string> = {
         CLOUDFLARE_API_TOKEN: '${narduk-nuxt-template.prd.CLOUDFLARE_API_TOKEN}',
         CLOUDFLARE_ACCOUNT_ID: '${narduk-nuxt-template.prd.CLOUDFLARE_ACCOUNT_ID}',
         POSTHOG_PUBLIC_KEY: '${narduk-analytics.prd.POSTHOG_PUBLIC_KEY}',
         POSTHOG_PROJECT_ID: '${narduk-analytics.prd.POSTHOG_PROJECT_ID}',
         POSTHOG_HOST: '${narduk-analytics.prd.POSTHOG_HOST}',
-        APP_NAME: APP_NAME,
-        SITE_URL: SITE_URL,
         GA_ACCOUNT_ID: '${narduk-analytics.prd.GA_ACCOUNT_ID}',
-        GSC_SERVICE_ACCOUNT_JSON: '${narduk-analytics.prd.GSC_SERVICE_ACCOUNT_JSON}'
+        GSC_SERVICE_ACCOUNT_JSON: '${narduk-analytics.prd.GSC_SERVICE_ACCOUNT_JSON}',
       }
 
-      const toSet = Object.entries(hubSecrets)
-        .filter(([key]) => !existing.has(key))
-        .map(([key, val]) => `${key}='${val}'`)
+      // Per-app secrets (only set if missing — don't overwrite app-specific values)
+      const appSecrets: Record<string, string> = {
+        APP_NAME: APP_NAME,
+        SITE_URL: SITE_URL,
+      }
+
+      // Hub refs: verify resolved value matches hub, overwrite if stale
+      let hubToken = ''
+      try {
+        const hubJson = execSync(
+          'doppler secrets get CLOUDFLARE_API_TOKEN --project narduk-nuxt-template --config prd --json',
+          { encoding: 'utf-8', stdio: 'pipe' },
+        )
+        hubToken = JSON.parse(hubJson).CLOUDFLARE_API_TOKEN?.computed || ''
+      } catch { /* hub unavailable */ }
+
+      const toSet: string[] = []
+
+      if (hubToken) {
+        let spokeToken = ''
+        try {
+          const spokeJson = execSync(
+            `doppler secrets get CLOUDFLARE_API_TOKEN --project ${APP_NAME} --config prd --json`,
+            { encoding: 'utf-8', stdio: 'pipe' },
+          )
+          spokeToken = JSON.parse(spokeJson).CLOUDFLARE_API_TOKEN?.computed || ''
+        } catch { /* not set */ }
+
+        if (spokeToken !== hubToken) {
+          // Stale or missing — force all hub refs
+          for (const [key, val] of Object.entries(hubRefs)) {
+            toSet.push(`${key}='${val}'`)
+          }
+        }
+      } else {
+        // Can't verify hub — only set missing refs
+        for (const [key, val] of Object.entries(hubRefs)) {
+          if (!existing.has(key)) toSet.push(`${key}='${val}'`)
+        }
+      }
+
+      // Per-app secrets: only add if missing
+      for (const [key, val] of Object.entries(appSecrets)) {
+        if (!existing.has(key)) toSet.push(`${key}='${val}'`)
+      }
 
       if (toSet.length > 0) {
         execSync(`doppler secrets set ${toSet.join(' ')} --project ${APP_NAME} --config prd`, { stdio: 'pipe' })
-        console.log(`  ✅ Synced ${toSet.length} hub credentials: ${toSet.map(s => s.split('=')[0]).join(', ')}`)
+        console.log(`  ✅ Synced ${toSet.length} credentials: ${toSet.map(s => s.split('=')[0]).join(', ')}`)
       } else {
-        console.log(`  ⏭ All core credentials already configured.`)
+        console.log(`  ⏭ All credentials correctly configured (hub references verified).`)
       }
     } catch (error: any) {
       console.warn(`  ⚠️ Failed to sync hub credentials: ${error.message}`)
@@ -464,16 +517,10 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     console.log('  ⏭ Doppler CLI not configured; skipping GitHub secret setup.')
     console.log('     Run `doppler setup` and re-run with --repair to complete this step.')
   } else {
-    // Pre-check: a non-template git remote must exist for gh secret set to work
-    let hasGitRemote = false
-    try {
-      const remotesCheck = execSync('git remote -v', { encoding: 'utf-8', stdio: 'pipe' }).trim()
-      hasGitRemote = remotesCheck.split('\n').some(line => !line.includes('narduk-nuxt-template') && line.includes('(push)'))
-    } catch { /* no git or no remotes */ }
-
     if (!hasGitRemote) {
       console.log('  ⏭ No git remote found (expected for fresh scaffolds).')
       console.log('    After adding a remote, re-run with --repair to set the GitHub secret.')
+      console.log('    ⚠️  Deploy will fail on push to main until DOPPLER_TOKEN is set; run setup with --repair after adding your remote.')
     } else {
       try {
         // Check if ci-deploy token already exists
@@ -538,22 +585,20 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     }
   }
 
-  // 6b. Local Doppler config (doppler.yaml) so `doppler run` works without --project/--config
-  if (DOPPLER_AVAILABLE && !process.env.CI) {
-    console.log('\nStep 6b/10: Configuring local Doppler (doppler.yaml)...')
-    try {
-      execSync(`doppler setup --project ${APP_NAME} --config dev`, {
-        encoding: 'utf-8',
-        stdio: 'pipe',
-        cwd: ROOT_DIR,
-      })
-      console.log('  ✅ Local Doppler config (doppler.yaml) created. `doppler run` will use this project/config.')
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
-      console.warn(`  ⚠️ Could not create doppler.yaml (run manually: doppler setup --project ${APP_NAME} --config dev): ${msg}`)
-    }
+  // 6.5. Local Doppler Setup (skip if in CI)
+  console.log('\nStep 6.5/10: Configuring local Doppler environment...')
+  if (!DOPPLER_AVAILABLE) {
+    console.log('  ⏭ Doppler CLI not configured; skipping local setup.')
   } else if (process.env.CI) {
-    console.log('\nStep 6b/10: Configuring local Doppler... ⏭ skipped (CI)')
+    console.log('  ⏭ Running in CI; skipping local Doppler setup.')
+  } else {
+    try {
+      execSync(`doppler setup --project ${APP_NAME} --config dev`, { encoding: 'utf-8', stdio: 'pipe' })
+      console.log(`  ✅ Local Doppler environment configured for project: ${APP_NAME} (dev config)`)
+    } catch (error: any) {
+      const stderr = error.stderr || error.message || ''
+      console.warn(`  ⚠️ Failed to configure local Doppler environment: ${stderr}`)
+    }
   }
 
   // 7. Analytics Provisioning (each service internally skips if already configured)
@@ -579,7 +624,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
         } else {
           console.log('  Installing ephemeral dependencies (googleapis, google-auth-library)...')
           execSync('pnpm add -w --save-dev googleapis google-auth-library', { encoding: 'utf-8', stdio: 'pipe' })
-          
+
           console.log('  Executing Narduk Analytics provisioning pipeline...')
           // Run against the app's own Doppler project (prd config) so SITE_URL, GSC creds,
           // and hub references all resolve correctly. Command is `all`, not `setup:all`.
@@ -609,7 +654,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
     if (await fs.stat(webFaviconSvg).then(() => true).catch(() => false)) {
       console.log('  Installing ephemeral dependencies (sharp)...')
       execSync('pnpm add -w --save-dev sharp', { encoding: 'utf-8', stdio: 'pipe' })
-      
+
       execSync(
         `npx tsx tools/generate-favicons.ts --target=apps/web/public --name="${DISPLAY_NAME}" --short-name="${DISPLAY_NAME.slice(0, 12)}"`,
         { stdio: 'inherit', cwd: ROOT_DIR }
@@ -635,7 +680,7 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
       const dirsToRemove = [
         path.join(ROOT_DIR, 'apps', 'showcase'),
       ]
-      
+
       const appsContent = await fs.readdir(path.join(ROOT_DIR, 'apps'), { withFileTypes: true }).catch(() => [])
       for (const entry of appsContent) {
         if (entry.isDirectory() && entry.name.startsWith('example-')) {
@@ -666,6 +711,73 @@ Pushes to \`main\` are automatically built and deployed via the GitHub Actions C
           delete rootPkg.scripts[script]
         }
         await fs.writeFile(rootPkgPath, JSON.stringify(rootPkg, null, 2) + '\n', 'utf-8')
+      }
+
+      // Strip test and quality scripts from all eslint packages so implementing repositories
+      // don't run internal template tests or lint the linters.
+      const eslintPkgPaths = [
+        path.join(ROOT_DIR, 'packages', 'eslint-config', 'package.json'),
+        path.join(ROOT_DIR, 'packages', 'eslint-config', 'eslint-plugin-nuxt-guardrails', 'package.json'),
+        path.join(ROOT_DIR, 'packages', 'eslint-config', 'eslint-plugin-nuxt-ui', 'package.json'),
+        path.join(ROOT_DIR, 'packages', 'eslint-config', 'eslint-plugin-vue-official-best-practices', 'package.json'),
+      ]
+      for (const pkgPath of eslintPkgPaths) {
+        try {
+          const pkgContent = await fs.readFile(pkgPath, 'utf-8')
+          const pkg = JSON.parse(pkgContent)
+          if (pkg.scripts) {
+            const scriptsToRemove = ['quality', 'test', 'test:watch', 'test:plugins', 'lint', 'typecheck']
+            for (const script of scriptsToRemove) {
+              delete pkg.scripts[script]
+            }
+            await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
+          }
+        } catch (err: any) {
+          // ignore
+        }
+      }
+
+      // Replace ci.yml with a slim version that calls reusable workflows from the template repo.
+      // This eliminates CI drift — when the template updates its workflows, all derived apps benefit.
+      const ciYamlPath = path.join(ROOT_DIR, '.github', 'workflows', 'ci.yml')
+      try {
+        const slimCi = `name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-\${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    uses: narduk-enterprises/narduk-nuxt-template/.github/workflows/reusable-quality.yml@main
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: [quality]
+    permissions:
+      contents: read
+      deployments: write
+    uses: narduk-enterprises/narduk-nuxt-template/.github/workflows/reusable-deploy.yml@main
+    secrets:
+      DOPPLER_TOKEN: \${{ secrets.DOPPLER_TOKEN }}
+      CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+`
+        await fs.writeFile(ciYamlPath, slimCi, 'utf-8')
+      } catch (ciErr: any) {
+        console.warn(`  ⚠️ Could not update ci.yml: ${ciErr.message}`)
+      }
+
+      // Remove reusable workflow definitions (they live in the template repo, not derived apps)
+      for (const wf of ['reusable-quality.yml', 'reusable-deploy.yml']) {
+        await fs.rm(path.join(ROOT_DIR, '.github', 'workflows', wf), { force: true })
       }
 
       // Rewrite playwright.config.ts to simple web configuration
@@ -709,6 +821,24 @@ export default defineConfig({
   }
 
   // 10. Done (script is kept for re-runs)
+  // Write the bootstrap sentinel so pre* hooks allow dev/build/deploy
+  await fs.writeFile(path.join(ROOT_DIR, '.setup-complete'), `initialized=${new Date().toISOString()}\napp=${APP_NAME}\n`, 'utf-8')
+
+  // Record the template SHA this app was spawned from (used by drift detection in CI)
+  let templateSha = ''
+  try {
+    templateSha = execSync('git rev-parse HEAD', { encoding: 'utf-8', stdio: 'pipe', cwd: ROOT_DIR }).trim()
+  } catch { /* pre-init state — no commits yet */ }
+
+  const templateVersionContent = [
+    `sha=${templateSha || 'unknown'}`,
+    `template=narduk-nuxt-template`,
+    `spawned=${new Date().toISOString()}`,
+    `app=${APP_NAME}`,
+    '',
+  ].join('\n')
+  await fs.writeFile(path.join(ROOT_DIR, '.template-version'), templateVersionContent, 'utf-8')
+
   console.log('\nStep 10/10: Complete!')
   console.log('  ℹ️  init.ts is kept for re-runs. Use --repair to re-run infra steps only.')
 
@@ -726,11 +856,20 @@ export default defineConfig({
   } else {
     console.log('\nNext steps:')
     console.log(`  1. Review Doppler secrets: doppler secrets --project ${APP_NAME} --config prd`)
-    console.log(`  2. Local Doppler is configured (doppler.yaml). If needed: doppler setup --project ${APP_NAME} --config dev`)
+    if (process.env.CI) {
+      console.log(`  2. Wire Doppler locally: doppler setup --project ${APP_NAME} --config dev`)
+    } else {
+      console.log(`  2. Verify local Doppler: doppler run -- doppler secrets`)
+    }
     console.log(`  3. Run database migration: pnpm run db:migrate`)
     console.log(`  4. Start dev server: doppler run -- pnpm run dev`)
     console.log(`  5. Verify infrastructure: pnpm run validate`)
     console.log(`  6. git add . && git commit -m "chore: initialize project"`)
+    if (!hasGitRemote) {
+      console.log(`\n  ⚠️  DEPLOYMENT BLOCKED: No git remote was found during setup.`)
+      console.log(`     GitHub CI deploy will fail on push to main until DOPPLER_TOKEN is set.`)
+      console.log(`     Add a remote and re-run: pnpm run setup -- --name="${APP_NAME}" --display="${DISPLAY_NAME}" --url="${SITE_URL}" --repair`)
+    }
     console.log()
     console.log('  💡 If analytics setup was deferred (missing Doppler secrets), run it later:')
     console.log(`     doppler run --project ${APP_NAME} --config prd -- npx jiti tools/setup-analytics.ts all`)
