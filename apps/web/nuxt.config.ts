@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // Extend the published Narduk Nuxt Layer
-  extends: ['@loganrenz/narduk-nuxt-template-layer'],
+  extends: ['@narduk-enterprises/narduk-nuxt-template-layer'],
 
   // App theme (overrides layer CSS for fonts, radius, tokens)
   css: ['~/assets/css/main.css'],
