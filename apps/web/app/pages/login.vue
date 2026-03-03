@@ -2,6 +2,7 @@
 useSeo({
   title: 'Log in — FlashCardPro',
   description: 'Log in to create and manage your decks.',
+  robots: 'noindex, nofollow',
 })
 useWebPageSchema({
   name: 'Log in — FlashCardPro',

@@ -5,18 +5,37 @@ const route = useRoute()
 const deckId = computed(() => route.params.id as string)
 const { render: renderMarkdown } = useMarkdown()
 
-useSeo({
-  title: 'Manage deck — FlashCardPro',
-  description: 'Add and edit cards in this deck.',
-})
-useWebPageSchema({
-  name: 'Manage deck — FlashCardPro',
-  description: 'Add and edit cards in this deck.',
-})
-
 const { user } = useAuth()
 const { deck, pending: deckPending } = useDeck(deckId)
 const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
+
+// Dynamic SEO — updates when deck data loads
+const seoTitle = computed(() => deck.value ? `${deck.value.name} — FlashCardPro` : 'Deck — FlashCardPro')
+const seoDescription = computed(() => deck.value ? `Manage and edit "${deck.value.name}" — ${deck.value.cardCount ?? 0} flashcards.` : 'Manage flashcard deck.')
+
+useSeo({
+  title: seoTitle.value,
+  description: seoDescription.value,
+})
+useWebPageSchema({
+  name: seoTitle.value,
+  description: seoDescription.value,
+})
+
+watch(deck, (d) => {
+  if (d) {
+    useSeo({
+      title: `${d.name} — FlashCardPro`,
+      description: `Manage and edit "${d.name}" — ${d.cardCount ?? 0} flashcards.`,
+    })
+    useBreadcrumbSchema([
+      { name: 'Home', url: '/' },
+      { name: 'Discover', url: '/discover' },
+      { name: d.name, url: `/decks/${d.id}` },
+    ])
+  }
+})
+
 const { addCard: addCardMutation } = useAddCard(deckId)
 const { editCard: editCardMutation } = useEditCard()
 const { deleteCard: deleteCardMutation } = useDeleteCard()

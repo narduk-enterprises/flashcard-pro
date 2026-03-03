@@ -1,12 +1,14 @@
 <script setup lang="ts">
 useSeo({
-  title: 'Discover decks — FlashCardPro',
-  description: 'Find flashcard decks to study. Browse or search by name and description.',
-  ogImage: { title: 'Discover decks', description: 'Find decks to study.', icon: '🔍' },
+  title: 'Discover Flashcard Decks — FlashCardPro',
+  description: 'Browse and search community flashcard decks. Find study materials for any subject — languages, science, history, and more.',
+  keywords: ['flashcard decks', 'study materials', 'browse flashcards', 'community decks', 'free study resources'],
+  ogImage: { title: 'Discover decks', description: 'Browse community flashcard decks.', icon: '🔍' },
 })
 useWebPageSchema({
-  name: 'Discover decks — FlashCardPro',
-  description: 'Find flashcard decks to study.',
+  name: 'Discover Flashcard Decks — FlashCardPro',
+  description: 'Browse and search community flashcard decks.',
+  type: 'CollectionPage',
 })
 
 const search = ref('')

@@ -1,13 +1,28 @@
 <script setup lang="ts">
 useSeo({
-  title: 'FlashCardPro — Dashboard',
-  description: 'Your decks and spaced repetition practice.',
-  ogImage: { title: 'FlashCardPro', description: 'Spaced repetition flashcards.', icon: '📇' },
+  title: 'FlashCardPro — Free Flashcard & Spaced Repetition App',
+  description: 'Create, study, and share flashcard decks with intelligent spaced repetition. Track your progress, collaborate with others, and master any subject — completely free.',
+  keywords: ['flashcards', 'spaced repetition', 'study app', 'learning', 'free flashcard app', 'study tools', 'flashcard maker'],
+  ogImage: { title: 'FlashCardPro', description: 'Free flashcard & spaced repetition app.', icon: '📇' },
 })
 useWebPageSchema({
-  name: 'FlashCardPro Dashboard',
-  description: 'Your decks and spaced repetition practice.',
+  name: 'FlashCardPro — Free Flashcard & Spaced Repetition App',
+  description: 'Create, study, and share flashcard decks with intelligent spaced repetition.',
 })
+useFAQSchema([
+  { question: 'What is FlashCardPro?', answer: 'FlashCardPro is a free flashcard application that uses spaced repetition to help you memorize anything efficiently. Create decks, add cards, and study with smart scheduling.' },
+  { question: 'Is FlashCardPro free?', answer: 'Yes, FlashCardPro is completely free to use. Create unlimited decks, add unlimited cards, and study as much as you want.' },
+  { question: 'What is spaced repetition?', answer: 'Spaced repetition is a learning technique where you review material at increasing intervals. Cards you know well are shown less often, while difficult cards appear more frequently.' },
+  { question: 'Can I share my flashcard decks?', answer: 'Yes! You can make your decks public so others can discover and study them. You can also clone public decks created by other users.' },
+])
+useSchemaOrg([{
+  '@type': 'SoftwareApplication',
+  'name': 'FlashCardPro',
+  'applicationCategory': 'EducationalApplication',
+  'operatingSystem': 'Web',
+  'offers': { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  'description': 'Create, study, and share flashcard decks with intelligent spaced repetition.',
+}])
 
 const { decks, pending, error } = useDecks()
 const { isLoggedIn, user } = useAuth()
@@ -80,20 +95,24 @@ function studyRandomDeck() {
     </UPageHeader>
 
     <!-- Study Statistics -->
-    <div v-if="isLoggedIn && stats && stats.totalReviews > 0" class="mb-6 grid gap-3 sm:grid-cols-4">
-      <div class="card-base p-4 text-center">
+    <div v-if="isLoggedIn && stats && stats.totalReviews > 0" class="mb-8 grid gap-4 sm:grid-cols-4">
+      <div class="card-base stat-accent p-4 text-center">
+        <UIcon name="i-lucide-layers" class="mx-auto mb-2 size-5 text-primary" />
         <p class="text-2xl font-bold text-default">{{ stats.totalDecks }}</p>
         <p class="text-xs text-default-muted">Decks</p>
       </div>
-      <div class="card-base p-4 text-center">
+      <div class="card-base stat-accent p-4 text-center">
+        <UIcon name="i-lucide-square-stack" class="mx-auto mb-2 size-5 text-blue-500" />
         <p class="text-2xl font-bold text-default">{{ stats.totalCards }}</p>
         <p class="text-xs text-default-muted">Cards</p>
       </div>
-      <div class="card-base p-4 text-center">
+      <div class="card-base stat-accent p-4 text-center">
+        <UIcon name="i-lucide-repeat" class="mx-auto mb-2 size-5 text-green-500" />
         <p class="text-2xl font-bold text-default">{{ stats.totalReviews }}</p>
         <p class="text-xs text-default-muted">Reviews</p>
       </div>
-      <div class="card-base p-4 text-center">
+      <div class="card-base stat-accent p-4 text-center">
+        <UIcon name="i-lucide-star" class="mx-auto mb-2 size-5 text-amber-500" />
         <p class="text-2xl font-bold text-default">{{ stats.averageRating }}</p>
         <p class="text-xs text-default-muted">Avg Rating</p>
       </div>
@@ -107,11 +126,16 @@ function studyRandomDeck() {
       <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
     </div>
 
-    <div v-else-if="!decks?.length" class="rounded-xl border border-default bg-default p-8 text-center shadow-card">
-      <p class="text-default-muted mb-4">No decks yet.</p>
-      <UButton to="/decks/new" icon="i-lucide-plus" color="primary">
-        Create your first deck
-      </UButton>
+    <div v-else-if="!decks?.length" class="relative overflow-hidden rounded-xl border border-default bg-default p-10 text-center shadow-card">
+      <div class="absolute inset-0 opacity-10" style="background: radial-gradient(ellipse at center, rgb(139 92 246 / 0.5), transparent 70%);" aria-hidden="true" />
+      <div class="relative">
+        <UIcon name="i-lucide-book-open" class="mx-auto mb-4 size-12 text-primary/50" />
+        <p class="text-default-muted mb-1 text-lg font-medium">No decks yet</p>
+        <p class="text-default-muted mb-6 text-sm">Create your first flashcard deck to start studying.</p>
+        <UButton to="/decks/new" icon="i-lucide-plus" color="primary" size="lg">
+          Create your first deck
+        </UButton>
+      </div>
     </div>
 
     <template v-else>
@@ -182,20 +206,23 @@ function studyRandomDeck() {
         <li
           v-for="(deck, i) in sortedDecks"
           :key="deck.id"
-          class="card-base flex flex-col gap-3 p-4 transition-base animate-count-in"
+          class="card-base gradient-border flex flex-col gap-3 p-5 animate-count-in"
           :style="{ animationDelay: `${i * 60}ms` }"
         >
           <div class="min-h-0 flex-1">
-            <h3 class="font-display font-semibold text-default">
-              {{ deck.name }}
-            </h3>
-            <p v-if="deck.description" class="mt-1 line-clamp-2 text-sm text-default-muted">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="font-display font-semibold text-default">
+                {{ deck.name }}
+              </h3>
+              <span class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary shrink-0">
+                <UIcon name="i-lucide-square-stack" class="size-3" />
+                {{ deck.cardCount ?? 0 }}
+              </span>
+            </div>
+            <p v-if="deck.description" class="mt-1.5 line-clamp-2 text-sm text-default-muted">
               {{ deck.description }}
             </p>
-            <p class="mt-1 text-xs text-default-muted">
-              {{ deck.cardCount ?? 0 }} card{{ (deck.cardCount ?? 0) === 1 ? '' : 's' }}
-            </p>
-            <div v-if="deck.tags" class="mt-1 flex flex-wrap gap-1">
+            <div v-if="deck.tags" class="mt-2 flex flex-wrap gap-1">
               <span
                 v-for="tag in deck.tags.split(',').map(t => t.trim()).filter(Boolean)"
                 :key="tag"
@@ -205,7 +232,7 @@ function studyRandomDeck() {
               </span>
             </div>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2 pt-1">
             <UButton
               :to="`/study/${deck.id}`"
               size="sm"

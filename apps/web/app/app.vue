@@ -113,7 +113,8 @@ async function handleLogout() {
     <ULink to="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-100 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-lg">Skip to content</ULink>
     <div class="app-shell min-h-screen flex flex-col bg-linear-to-b from-primary-50/30 to-transparent dark:from-primary-950/20 dark:to-transparent">
       <!-- Header -->
-      <div class="sticky top-0 z-50 glass border-b border-default shadow-card" role="banner">
+      <div class="sticky top-0 z-50 glass border-b border-default shadow-card relative" role="banner">
+        <div class="absolute inset-x-0 bottom-0 h-px" style="background: linear-gradient(90deg, transparent, rgb(139 92 246 / 0.4), rgb(59 130 246 / 0.3), rgb(139 92 246 / 0.4), transparent);" aria-hidden="true" />
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <NuxtLink to="/" class="flex items-center gap-2.5 group transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
             <img src="/logo.png" alt="" class="size-8 rounded-xl object-cover shadow-card" width="32" height="32">
@@ -297,10 +298,23 @@ async function handleLogout() {
       </div>
 
       <!-- Footer -->
-      <div class="border-t border-default py-6">
+      <div class="border-t border-default py-8 relative" role="contentinfo">
+        <div class="absolute inset-x-0 top-0 h-px" style="background: linear-gradient(90deg, transparent, rgb(139 92 246 / 0.2), rgb(59 130 246 / 0.15), rgb(139 92 246 / 0.2), transparent);" aria-hidden="true" />
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p class="text-center text-sm text-muted">
-            {{ appDisplayName }} &middot; Nuxt UI 4 &middot; Cloudflare Workers &middot; <NuxtTime :datetime="new Date()" year="numeric" />
+          <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <div class="text-center sm:text-left">
+              <p class="text-sm font-medium text-default">{{ appDisplayName }}</p>
+              <p class="mt-1 text-xs text-muted max-w-md">Free flashcard app with spaced repetition. Create, study, and share decks to master any subject.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4 text-sm" role="navigation" aria-label="Footer navigation">
+              <NuxtLink to="/" class="text-muted hover:text-default transition-colors">Home</NuxtLink>
+              <NuxtLink to="/discover" class="text-muted hover:text-default transition-colors">Discover Decks</NuxtLink>
+              <NuxtLink to="/login" class="text-muted hover:text-default transition-colors">Log in</NuxtLink>
+              <NuxtLink to="/register" class="text-muted hover:text-default transition-colors">Sign up</NuxtLink>
+            </div>
+          </div>
+          <p class="mt-4 text-center text-xs text-muted">
+            &copy; <NuxtTime :datetime="new Date()" year="numeric" /> {{ appDisplayName }}. All rights reserved.
           </p>
         </div>
       </div>

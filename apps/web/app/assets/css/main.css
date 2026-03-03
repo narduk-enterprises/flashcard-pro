@@ -12,6 +12,7 @@
   --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
   --shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
   --shadow-overlay: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-glow: 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 30px -4px rgb(139 92 246 / 0.3), 0 8px 24px -8px rgb(139 92 246 / 0.15);
 
   /* Border Radius — slightly rounder, pill CTA buttons */
   --radius-card: 1.25rem;
@@ -44,6 +45,7 @@ h4,
 .shadow-card { box-shadow: var(--shadow-card); }
 .shadow-elevated { box-shadow: var(--shadow-elevated); }
 .shadow-overlay { box-shadow: var(--shadow-overlay); }
+.shadow-glow { box-shadow: var(--shadow-glow); }
 
 /* ─── Transition Utilities ─── */
 
@@ -55,8 +57,8 @@ h4,
 
 .glass {
   @apply bg-white/80 border border-gray-200 dark:bg-gray-900/80 dark:border-gray-700;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .glass-card {
@@ -72,11 +74,12 @@ h4,
   @apply bg-white border border-gray-200 dark:bg-gray-900 dark:border-gray-700;
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  transition: box-shadow var(--transition-base);
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
 }
 
 .card-base:hover {
   box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
 }
 
 /* ─── Dark Mode Enhancements ─── */
@@ -100,12 +103,62 @@ h4,
   box-shadow: var(--shadow-elevated);
 }
 
+.dark .shadow-glow {
+  box-shadow: 0 0 0 1px rgb(139 92 246 / 0.25), 0 0 40px -4px rgb(139 92 246 / 0.4), 0 8px 32px -8px rgb(139 92 246 / 0.2);
+}
+
 /* ─── Signature: focus glow (study card, primary accent) ─── */
 .focus-glow {
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.15), 0 0 24px -4px rgb(139 92 246 / 0.25);
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.2), 0 0 32px -4px rgb(139 92 246 / 0.3), 0 0 60px -8px rgb(139 92 246 / 0.12);
 }
 .dark .focus-glow {
-  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.25), 0 0 32px -4px rgb(139 92 246 / 0.35);
+  box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.3), 0 0 40px -4px rgb(139 92 246 / 0.4), 0 0 80px -8px rgb(139 92 246 / 0.18);
+}
+
+/* ─── Gradient Text ─── */
+.gradient-text {
+  background: linear-gradient(135deg, rgb(139 92 246) 0%, rgb(59 130 246) 50%, rgb(139 92 246) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ─── Gradient Border Ring ─── */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--radius-card) + 2px);
+  background: linear-gradient(135deg, rgb(139 92 246 / 0.4), rgb(59 130 246 / 0.3), rgb(236 72 153 / 0.3), rgb(139 92 246 / 0.4));
+  background-size: 300% 300%;
+  animation: gradient-shift 6s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* ─── Stat Card Accent ─── */
+.stat-accent {
+  position: relative;
+  overflow: hidden;
+}
+.stat-accent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: linear-gradient(90deg, rgb(139 92 246), rgb(59 130 246));
 }
 
 /* ─── Animations ─── */
@@ -130,6 +183,17 @@ h4,
   animation: count-in 0.5s ease-out both;
 }
 
+@keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.3) translateY(10px); }
+  50% { opacity: 1; transform: scale(1.05); }
+  70% { transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; box-shadow: 0 0 8px currentColor; }
   50% { opacity: 0.5; box-shadow: 0 0 16px currentColor; }
@@ -137,6 +201,51 @@ h4,
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes card-glow-pulse {
+  0%, 100% { box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.2), 0 0 32px -4px rgb(139 92 246 / 0.3); }
+  50% { box-shadow: var(--shadow-elevated), 0 0 0 1px rgb(139 92 246 / 0.3), 0 0 48px -4px rgb(139 92 246 / 0.4); }
+}
+
+.animate-card-glow {
+  animation: card-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes score-fill {
+  from { stroke-dashoffset: var(--score-circumference, 283); }
+  to { stroke-dashoffset: var(--score-offset, 0); }
+}
+
+.animate-score-ring {
+  animation: score-fill 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(1deg); }
+  75% { transform: translateY(4px) rotate(-1deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes confetti-v2 {
+  0% { opacity: 1; top: -10px; transform: rotate(0deg) translateX(0) scale(1); }
+  25% { opacity: 1; }
+  100% { opacity: 0; top: 100vh; transform: rotate(calc(var(--rot, 720) * 1deg)) translateX(calc((var(--i) - 10) * 8px)) scale(0.5); }
 }
 
 .page-enter-active,
@@ -209,4 +318,30 @@ h4,
 
 .form-actions-full > * {
   width: 100%;
+}
+
+/* ─── Accessibility: Reduced Motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient,
+  .animate-count-in,
+  .animate-bounce-in,
+  .animate-pulse-glow,
+  .animate-card-glow,
+  .animate-shimmer,
+  .animate-score-ring,
+  .animate-float,
+  .gradient-text,
+  .gradient-border::before {
+    animation: none !important;
+  }
+
+  .page-enter-active,
+  .page-leave-active {
+    transition: none !important;
+  }
+
+  .card-base:hover {
+    transform: none;
+  }
 }

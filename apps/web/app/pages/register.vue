@@ -2,6 +2,7 @@
 useSeo({
   title: 'Sign up — FlashCardPro',
   description: 'Create an account to create and manage flashcard decks.',
+  robots: 'noindex, nofollow',
 })
 useWebPageSchema({
   name: 'Sign up — FlashCardPro',

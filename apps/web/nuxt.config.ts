@@ -46,8 +46,16 @@ export default defineNuxtConfig({
   site: {
     url: process.env.SITE_URL || 'https://narduk.workers.dev',
     name: 'FlashCardPro',
-    description: 'FlashCardPro — powered by Nuxt 4 and Cloudflare Workers.',
+    description: 'Create, study, and share flashcard decks with intelligent spaced repetition. Free, fast, and beautiful.',
     defaultLocale: 'en',
+  },
+
+  sitemap: {
+    exclude: ['/login', '/register', '/decks/new'],
+  },
+
+  robots: {
+    disallow: ['/api/', '/decks/new'],
   },
 
   schemaOrg: {
