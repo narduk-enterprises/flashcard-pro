@@ -44,40 +44,39 @@ async function onSubmit() {
       style="background-image: url('/images/auth-bg.webp');"
       aria-hidden="true"
     />
-    <div class="relative flex flex-col items-center flex-1">
-      <UPage>
-        <UPageHeader title="Sign up" description="Create an account to create and manage decks.">
-          <template #links>
-            <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-arrow-left">
-              Back
-            </UButton>
-          </template>
-        </UPageHeader>
-
-        <UForm :state="state" class="glass-card shadow-elevated max-w-sm w-full space-y-4 p-6 animate-count-in" @submit="onSubmit">
-      <UFormField label="Email" name="email" required>
-        <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" />
-      </UFormField>
-      <UFormField label="Password" name="password" required>
-        <UInput v-model="state.password" type="password" placeholder="At least 8 characters" size="lg" />
-      </UFormField>
-      <UFormField label="Name (optional)" name="name">
-        <UInput v-model="state.name" placeholder="Your name" size="lg" />
-      </UFormField>
-      <p v-if="error" class="text-sm text-muted">
-        {{ error }}
-      </p>
-      <div class="flex flex-col gap-2">
-        <UButton type="submit" :loading="loading" color="primary" block>
-          Sign up
-        </UButton>
-        <p class="text-center text-sm text-default-muted">
-          Already have an account?
-          <ULink to="/login" class="text-primary font-medium">Log in</ULink>
-        </p>
+    <div class="relative flex flex-col justify-center items-center flex-1 py-12 sm:px-6 lg:px-8">
+      <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
+        <h2 class="text-3xl font-display font-bold text-default">Sign up</h2>
+        <p class="mt-2 text-sm text-default-muted">Create an account to create and manage decks.</p>
       </div>
-    </UForm>
-      </UPage>
+
+      <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="glass-card shadow-elevated py-8 px-4 sm:px-10 animate-count-in">
+          <UForm :state="state" class="space-y-6" @submit="onSubmit">
+            <UFormField label="Email" name="email" required>
+              <UInput v-model="state.email" type="email" placeholder="you@example.com" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Password" name="password" required>
+              <UInput v-model="state.password" type="password" placeholder="At least 8 characters" size="lg" class="w-full" />
+            </UFormField>
+            <UFormField label="Name (optional)" name="name">
+              <UInput v-model="state.name" placeholder="Your name" size="lg" class="w-full" />
+            </UFormField>
+            <p v-if="error" class="text-sm text-muted">
+              {{ error }}
+            </p>
+            <div class="flex flex-col gap-2">
+              <UButton type="submit" :loading="loading" color="primary" block>
+                Sign up
+              </UButton>
+              <p class="text-center text-sm text-default-muted">
+                Already have an account?
+                <ULink to="/login" class="text-primary font-medium">Log in</ULink>
+              </p>
+            </div>
+          </UForm>
+        </div>
+      </div>
     </div>
   </div>
 </template>

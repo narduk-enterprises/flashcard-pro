@@ -86,11 +86,15 @@ async function toggleFavorite(deckId: string) {
     <div class="mb-6 flex flex-wrap items-center gap-3">
       <UInput
         v-model="search"
-        placeholder="Search decks..."
+        placeholder="     Search decks..."
         size="lg"
         icon="i-lucide-search"
-        class="max-w-md"
-      />
+        class="max-w-md w-full sm:w-80"
+      >
+        <template #leading>
+          <UIcon name="i-lucide-search" class="text-muted pointer-events-none" />
+        </template>
+      </UInput>
       <!-- Feature 17: Sort controls -->
       <div class="flex items-center gap-1">
         <span class="text-xs text-default-muted">Sort:</span>

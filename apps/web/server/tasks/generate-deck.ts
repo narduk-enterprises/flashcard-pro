@@ -1,6 +1,5 @@
 import { categories, decks, cards } from '../database/schema'
 import { v4 as uuidv4 } from 'uuid'
-import { eq } from 'drizzle-orm'
 
 // In a real production environment, you might want to create a dedicated system user
 // For now, we'll leave user_id as NULL to signify a public/system-generated deck,
@@ -11,7 +10,7 @@ export default defineTask({
         name: 'generate-deck',
         description: 'Generates a new flashcard deck every 4 hours using Cloudflare AI',
     },
-    async run({ payload, context }) {
+    async run({ context }) {
         console.log('[Task: generate-deck] Starting AI deck generation...')
 
         // Access Cloudflare AI binding and DB from the event context
@@ -23,6 +22,7 @@ export default defineTask({
         }
 
         // We construct a mock event to pass to useDatabase for tasks
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mockEvent = { context } as any
         const db = useDatabase(mockEvent)
 
@@ -70,7 +70,7 @@ Generate exactly 7-10 high-quality cards.`
             const rawText = response.response || response
 
             // Clean up the text in case the LLM returned markdown blocks despite instructions
-            const cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim()
+            const cleanedText = rawText.replaceAll('```json', '').replaceAll('```', '').trim()
             const aiDeck = JSON.parse(cleanedText)
 
             // 5. Insert into Database

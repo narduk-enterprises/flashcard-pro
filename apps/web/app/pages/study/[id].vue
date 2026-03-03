@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Card } from '../../types/flashcard'
+import { useSwipe } from '@vueuse/core'
 
 const route = useRoute()
 const deckId = computed(() => route.params.id as string)
@@ -36,7 +37,6 @@ watch(deck, (d) => {
 const { cards, pending: cardsPending, refresh } = useDeckCards(deckId)
 const { render: renderMarkdown } = useMarkdown()
 const { submitReview } = useSubmitReview()
-import { useSwipe } from '@vueuse/core'
 
 const pending = computed(() => deckPending.value || cardsPending.value)
 const shuffled = ref(false)
@@ -433,75 +433,102 @@ onBeforeUnmount(() => {
         />
       </div>
 
-      <div class="card-base relative overflow-hidden p-8 text-center">
+      <div class="card-base relative overflow-hidden p-8 sm:p-12 text-center shadow-card">
         <!-- Gradient accent at top -->
-        <div class="absolute inset-x-0 top-0 h-1" style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #EC4899);" />
+        <div class="absolute inset-x-0 top-0 h-1.5" style="background: linear-gradient(90deg, #8B5CF6, #3B82F6, #EC4899);" />
 
-        <!-- Score Ring -->
-        <div class="mx-auto mb-6 relative" style="width: 140px; height: 140px;">
-          <!-- eslint-disable-next-line atx/no-inline-svg -->
-          <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
-            <!-- Background ring -->
-            <circle
-              cx="50" cy="50" r="45"
-              fill="none"
-              stroke="currentColor"
-              class="text-muted"
-              stroke-width="6"
-            />
-            <!-- Score ring -->
-            <circle
-              cx="50" cy="50" r="45"
-              fill="none"
-              :stroke="scoreColor"
-              stroke-width="6"
-              stroke-linecap="round"
-              :stroke-dasharray="scoreCircumference"
-              :stroke-dashoffset="scoreCircumference"
-              class="animate-score-ring"
-              :style="{ '--score-circumference': scoreCircumference, '--score-offset': scoreOffset }"
-            />
-          </svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-3xl font-bold font-display" :style="{ color: scoreColor }">{{ scorePercent }}%</span>
-            <span class="text-xs text-default-muted mt-0.5">score</span>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 text-left">
+          <!-- Score Ring (larger) -->
+          <div class="relative shrink-0" style="width: 180px; height: 180px;">
+            <!-- eslint-disable-next-line atx/no-inline-svg -->
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+              <!-- Background ring -->
+              <circle
+                cx="50" cy="50" r="45"
+                fill="none"
+                stroke="currentColor"
+                class="text-muted opacity-50"
+                stroke-width="8"
+              />
+              <!-- Score ring -->
+              <circle
+                cx="50" cy="50" r="45"
+                fill="none"
+                :stroke="scoreColor"
+                stroke-width="8"
+                stroke-linecap="round"
+                :stroke-dasharray="scoreCircumference"
+                :stroke-dashoffset="scoreCircumference"
+                class="animate-score-ring drop-shadow-md"
+                :style="{ '--score-circumference': scoreCircumference, '--score-offset': scoreOffset }"
+              />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-5xl font-bold font-display tracking-tight" :style="{ color: scoreColor }">{{ scorePercent }}<span class="text-2xl opacity-80">%</span></span>
+              <span class="text-sm font-medium text-default-muted mt-1 uppercase tracking-wider">score</span>
+            </div>
+          </div>
+
+          <!-- Text block inline on desktop -->
+          <div class="text-center sm:text-left flex-1 max-w-sm">
+            <h2 class="font-display text-4xl font-bold text-default tracking-tight">{{ scoreLabel }}</h2>
+            <p class="mt-3 text-lg text-default-muted">
+              You reviewed <span class="font-semibold text-default">{{ sessionTotal }} card{{ sessionTotal === 1 ? '' : 's' }}</span> in this session.
+            </p>
+            
+            <!-- Time stats moved inline -->
+            <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm font-medium">
+              <span class="flex items-center gap-1.5 px-3 py-1 bg-muted/50 rounded-full text-default">
+                <UIcon name="i-lucide-clock" class="size-4 text-primary" />
+                {{ formattedTime }}
+              </span>
+              <span class="flex items-center gap-1.5 px-3 py-1 bg-muted/50 rounded-full text-default">
+                <UIcon name="i-lucide-timer" class="size-4 text-primary" />
+                {{ timePerCard }} / card
+              </span>
+            </div>
           </div>
         </div>
 
-        <h2 class="font-display text-2xl font-bold text-default">{{ scoreLabel }}</h2>
-        <p class="mt-2 text-default-muted">
-          You reviewed {{ sessionTotal }} card{{ sessionTotal === 1 ? '' : 's' }} in this session.
-        </p>
+        <USeparator class="my-10" />
 
-        <!-- Stats Grid -->
-        <div class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-error">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-error/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-rotate-ccw" class="size-4 text-error" />
+        <!-- High End Stats Grid -->
+        <h3 class="text-lg font-bold font-display text-default mb-6 tracking-wide">PERFORMANCE BREAKDOWN</h3>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div class="glass-card shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col p-5 group border-t-4 border-error/50">
+            <div class="absolute inset-0 bg-linear-to-br from-error/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-xs font-bold text-default-muted uppercase tracking-wider">Again</p>
+              <UIcon name="i-lucide-rotate-ccw" class="size-5 text-error opacity-70" />
             </div>
-            <p class="text-3xl font-display font-bold text-error mt-2">{{ sessionStats.again }}</p>
-            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Again</p>
+            <p class="text-4xl font-display font-bold text-default">{{ sessionStats.again }}</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-warning">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-warning/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-alert-triangle" class="size-4 text-warning" />
+          
+          <div class="glass-card shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col p-5 group border-t-4 border-warning/50">
+            <div class="absolute inset-0 bg-linear-to-br from-warning/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-xs font-bold text-default-muted uppercase tracking-wider">Hard</p>
+              <UIcon name="i-lucide-alert-triangle" class="size-5 text-warning opacity-70" />
             </div>
-            <p class="text-3xl font-display font-bold text-warning mt-2">{{ sessionStats.hard }}</p>
-            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Hard</p>
+            <p class="text-4xl font-display font-bold text-default">{{ sessionStats.hard }}</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-primary">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-primary/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-check" class="size-4 text-primary" />
+          
+          <div class="glass-card shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col p-5 group border-t-4 border-primary/50">
+            <div class="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-xs font-bold text-default-muted uppercase tracking-wider">Good</p>
+              <UIcon name="i-lucide-check" class="size-5 text-primary opacity-70" />
             </div>
-            <p class="text-3xl font-display font-bold text-primary mt-2">{{ sessionStats.good }}</p>
-            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Good</p>
+            <p class="text-4xl font-display font-bold text-default">{{ sessionStats.good }}</p>
           </div>
-          <div class="card-base flex flex-col items-center justify-center p-4 border-l-4 border-success">
-            <div class="flex items-center justify-center gap-1.5 mb-1 bg-success/10 rounded-full px-2.5 py-1">
-              <UIcon name="i-lucide-zap" class="size-4 text-success" />
+          
+          <div class="glass-card shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col p-5 group border-t-4 border-success/50">
+            <div class="absolute inset-0 bg-linear-to-br from-success/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-xs font-bold text-default-muted uppercase tracking-wider">Easy</p>
+              <UIcon name="i-lucide-zap" class="size-5 text-success opacity-70" />
             </div>
-            <p class="text-3xl font-display font-bold text-success mt-2">{{ sessionStats.easy }}</p>
-            <p class="text-xs font-medium text-default-muted mt-1 uppercase tracking-wider">Easy</p>
+            <p class="text-4xl font-display font-bold text-default">{{ sessionStats.easy }}</p>
           </div>
         </div>
 
