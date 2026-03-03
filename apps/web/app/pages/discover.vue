@@ -11,6 +11,19 @@ useWebPageSchema({
 
 const search = ref('')
 const { decks, pending, error } = useDiscoverDecks(search)
+const { isLoggedIn } = useAuth()
+const { cloneDeck } = useCloneDeck()
+const cloningDeckId = ref<string | null>(null)
+
+async function handleClone(deckId: string) {
+  cloningDeckId.value = deckId
+  try {
+    const cloned = await cloneDeck(deckId)
+    await navigateTo(`/decks/${cloned.id}`)
+  } finally {
+    cloningDeckId.value = null
+  }
+}
 </script>
 
 <template>
@@ -89,6 +102,17 @@ const { decks, pending, error } = useDiscoverDecks(search)
             variant="soft"
           >
             Manage
+          </UButton>
+          <UButton
+            v-if="isLoggedIn"
+            size="sm"
+            icon="i-lucide-copy"
+            color="neutral"
+            variant="soft"
+            :loading="cloningDeckId === deck.id"
+            @click="handleClone(deck.id)"
+          >
+            Clone
           </UButton>
         </div>
       </li>

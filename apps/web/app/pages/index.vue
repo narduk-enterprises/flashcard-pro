@@ -10,6 +10,8 @@ useWebPageSchema({
 })
 
 const { decks, pending, error } = useDecks()
+const { isLoggedIn } = useAuth()
+const { stats } = useStudyStats()
 </script>
 
 <template>
@@ -27,6 +29,26 @@ const { decks, pending, error } = useDecks()
         </UButton>
       </template>
     </UPageHeader>
+
+    <!-- Study Statistics -->
+    <div v-if="isLoggedIn && stats && stats.totalReviews > 0" class="mb-6 grid gap-3 sm:grid-cols-4">
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalDecks }}</p>
+        <p class="text-xs text-default-muted">Decks</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalCards }}</p>
+        <p class="text-xs text-default-muted">Cards</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.totalReviews }}</p>
+        <p class="text-xs text-default-muted">Reviews</p>
+      </div>
+      <div class="card-base p-4 text-center">
+        <p class="text-2xl font-bold text-default">{{ stats.averageRating }}</p>
+        <p class="text-xs text-default-muted">Avg Rating</p>
+      </div>
+    </div>
 
     <div v-if="error" class="rounded-lg border border-default bg-muted p-4">
       <p class="text-muted">Failed to load decks. Check the console and try again.</p>

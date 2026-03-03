@@ -19,7 +19,13 @@ const { render: renderMarkdown } = useMarkdown()
 const { submitReview } = useSubmitReview()
 
 const deck = computed(() => decks.value?.find(d => d.id === deckId.value) ?? null)
-const cardList = computed(() => (cards.value ?? []) as Card[])
+const shuffled = ref(false)
+const shuffledCards = ref<Card[]>([])
+const cardList = computed(() => {
+  if (shuffled.value && shuffledCards.value.length) return shuffledCards.value
+  return (cards.value ?? []) as Card[]
+})
+const reverseMode = ref(false)
 const currentIndex = ref(0)
 const flipped = ref(false)
 const ratingInProgress = ref(false)
@@ -73,6 +79,34 @@ async function rate(r: number) {
   }
 }
 
+function toggleShuffle() {
+  shuffled.value = !shuffled.value
+  if (shuffled.value) {
+    const arr = [...(cards.value ?? []) as Card[]]
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j]!, arr[i]!]
+    }
+    shuffledCards.value = arr
+  }
+  currentIndex.value = 0
+  flipped.value = false
+}
+
+function toggleReverse() {
+  reverseMode.value = !reverseMode.value
+}
+
+const displayFront = computed(() => {
+  if (!currentCard.value) return ''
+  return reverseMode.value ? currentCard.value.back : currentCard.value.front
+})
+
+const displayBack = computed(() => {
+  if (!currentCard.value) return ''
+  return reverseMode.value ? currentCard.value.front : currentCard.value.back
+})
+
 function restartSession() {
   sessionComplete.value = false
   sessionStats.again = 0
@@ -122,6 +156,22 @@ onBeforeUnmount(() => {
         </UButton>
         <UButton v-if="deck" :to="`/decks/${deck.id}`" variant="ghost" color="neutral" icon="i-lucide-settings">
           Manage deck
+        </UButton>
+        <UButton
+          variant="ghost"
+          :color="shuffled ? 'primary' : 'neutral'"
+          icon="i-lucide-shuffle"
+          @click="toggleShuffle"
+        >
+          Shuffle
+        </UButton>
+        <UButton
+          variant="ghost"
+          :color="reverseMode ? 'primary' : 'neutral'"
+          icon="i-lucide-repeat"
+          @click="toggleReverse"
+        >
+          Reverse
         </UButton>
       </template>
     </UPageHeader>
@@ -206,7 +256,7 @@ onBeforeUnmount(() => {
             style="backface-visibility: hidden;"
           >
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(currentCard.front)" />
+            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(displayFront)" />
             <p class="text-default-muted mt-2 text-center text-sm">
               Press <UKbd value="Space" class="mx-0.5" /> to flip
             </p>
@@ -216,7 +266,7 @@ onBeforeUnmount(() => {
             style="backface-visibility: hidden; transform: rotateY(180deg);"
           >
             <!-- eslint-disable-next-line vue/no-v-html -- Content sanitized by useMarkdown -->
-            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(currentCard.back)" />
+            <p v-if="currentCard" class="text-default text-lg" v-html="renderMarkdown(displayBack)" />
             <p class="text-default-muted mt-2 text-center text-sm">
               Press <UKbd value="Space" class="mx-0.5" /> to flip back
             </p>
