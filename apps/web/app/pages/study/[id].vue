@@ -33,10 +33,72 @@ const ratingInProgress = ref(false)
 const sessionComplete = ref(false)
 const sessionStats = reactive({ again: 0, hard: 0, good: 0, easy: 0 })
 
+// Feature 5: Study Session Timer
+const sessionStartTime = ref(0)
+const elapsedSeconds = ref(0)
+let timerInterval: ReturnType<typeof setInterval> | null = null
+
+const formattedTime = computed(() => {
+  const mins = Math.floor(elapsedSeconds.value / 60)
+  const secs = elapsedSeconds.value % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+})
+
+function startTimer() {
+  stopTimer()
+  sessionStartTime.value = Date.now()
+  timerInterval = setInterval(() => {
+    elapsedSeconds.value = Math.floor((Date.now() - sessionStartTime.value) / 1000)
+  }, 1000)
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+// Feature 6: Card Navigation
+function goToPreviousCard() {
+  if (currentIndex.value > 0) {
+    currentIndex.value--
+    flipped.value = false
+  }
+}
+
+// Feature 7: Score percentage
+const scorePercent = computed(() => {
+  if (sessionTotal.value === 0) return 0
+  const weighted = (sessionStats.easy * 100) + (sessionStats.good * 75) + (sessionStats.hard * 50) + (sessionStats.again * 0)
+  return Math.round(weighted / sessionTotal.value)
+})
+
+// Feature 8: Missed cards tracking
+const missedCardIds = ref<string[]>([])
+
+function addMissedCard(cardId: string) {
+  if (!missedCardIds.value.includes(cardId)) {
+    missedCardIds.value = [...missedCardIds.value, cardId]
+  }
+}
+
+const missedCardCount = computed(() => missedCardIds.value.length)
+
+// Feature 9: Keyboard shortcut help
+const showShortcuts = ref(false)
+
 const currentCard = computed(() => {
   const list = cardList.value
   const i = currentIndex.value
   return i >= 0 && i < list.length ? list[i]! : null
+})
+
+// Feature 10: Card position label
+const cardPositionLabel = computed(() => {
+  const total = cardList.value.length
+  if (total === 0) return ''
+  return `Card ${currentIndex.value + 1} of ${total}`
 })
 
 const progressLabel = computed(() => {
@@ -65,15 +127,22 @@ async function rate(r: number) {
   ratingInProgress.value = true
   try {
     await submitReview({ cardId: currentCard.value.id, rating: r })
-    if (r === 1) sessionStats.again++
-    else if (r === 2) sessionStats.hard++
-    else if (r === 3) sessionStats.good++
-    else if (r === 4) sessionStats.easy++
+    if (r === 1) {
+      sessionStats.again++
+      addMissedCard(currentCard.value.id)
+    } else if (r === 2) {
+      sessionStats.hard++
+    } else if (r === 3) {
+      sessionStats.good++
+    } else if (r === 4) {
+      sessionStats.easy++
+    }
     flipped.value = false
     if (currentIndex.value < cardList.value.length - 1) {
       currentIndex.value++
     } else {
       sessionComplete.value = true
+      stopTimer()
     }
   } finally {
     ratingInProgress.value = false
@@ -120,7 +189,29 @@ function restartSession() {
   sessionStats.easy = 0
   currentIndex.value = 0
   flipped.value = false
+  missedCardIds.value = []
+  elapsedSeconds.value = 0
+  startTimer()
   refresh()
+}
+
+// Feature 8: Study only missed cards
+function studyMissedCards() {
+  const allCards = cardList.value
+  const missed = allCards.filter(c => missedCardIds.value.includes(c.id))
+  if (missed.length === 0) return
+  shuffledCards.value = missed
+  shuffled.value = true
+  sessionComplete.value = false
+  sessionStats.again = 0
+  sessionStats.hard = 0
+  sessionStats.good = 0
+  sessionStats.easy = 0
+  currentIndex.value = 0
+  flipped.value = false
+  missedCardIds.value = []
+  elapsedSeconds.value = 0
+  startTimer()
 }
 
 function onStudyKeydown(event: KeyboardEvent) {
@@ -128,11 +219,21 @@ function onStudyKeydown(event: KeyboardEvent) {
     focusMode.value = false
     return
   }
+  if (event.key === '?' && !sessionComplete.value) {
+    showShortcuts.value = !showShortcuts.value
+    return
+  }
+  if (showShortcuts.value) {
+    showShortcuts.value = false
+    return
+  }
   if (sessionComplete.value) return
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || (event.target instanceof HTMLElement && event.target.isContentEditable)) return
   if (event.key === ' ' || event.key === 'Enter') {
     event.preventDefault()
     flip()
+  } else if (event.key === 'ArrowLeft') {
+    goToPreviousCard()
   } else if (canRate.value && event.key === '1') {
     rate(1)
   } else if (canRate.value && event.key === '2') {
@@ -146,10 +247,12 @@ function onStudyKeydown(event: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', onStudyKeydown)
+  startTimer()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onStudyKeydown)
+  stopTimer()
 })
 </script>
 
@@ -210,11 +313,26 @@ onBeforeUnmount(() => {
 
     <!-- Session Summary -->
     <div v-else-if="sessionComplete" class="mx-auto max-w-2xl">
+      <!-- Feature 19: Confetti -->
+      <div class="confetti-container" aria-hidden="true">
+        <div v-for="n in 20" :key="n" class="confetti-piece bg-primary size-2.5 rounded-full" :style="{ '--i': n }" />
+      </div>
       <div class="card-base p-8 text-center">
         <UIcon name="i-lucide-trophy" class="mx-auto mb-4 size-12 text-primary" />
         <h2 class="font-display text-2xl font-bold text-default">Session Complete!</h2>
         <p class="mt-2 text-default-muted">
           You reviewed {{ sessionTotal }} card{{ sessionTotal === 1 ? '' : 's' }} in this session.
+        </p>
+
+        <!-- Feature 7: Score percentage -->
+        <div class="mt-4">
+          <p class="text-4xl font-bold text-primary">{{ scorePercent }}%</p>
+          <p class="text-sm text-default-muted">Performance score</p>
+        </div>
+
+        <!-- Feature 5: Session time -->
+        <p class="mt-2 text-sm text-default-muted">
+          <UIcon name="i-lucide-clock" class="inline size-4" /> Time: {{ formattedTime }}
         </p>
 
         <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -240,6 +358,16 @@ onBeforeUnmount(() => {
           <UButton icon="i-lucide-rotate-ccw" color="primary" @click="restartSession">
             Study again
           </UButton>
+          <!-- Feature 8: Study missed cards only -->
+          <UButton
+            v-if="missedCardCount > 0"
+            icon="i-lucide-target"
+            color="warning"
+            variant="soft"
+            @click="studyMissedCards"
+          >
+            Study missed ({{ missedCardCount }})
+          </UButton>
           <UButton to="/" variant="ghost" color="neutral" icon="i-lucide-home">
             Dashboard
           </UButton>
@@ -249,6 +377,12 @@ onBeforeUnmount(() => {
 
     <!-- Study Cards -->
     <div v-else class="mx-auto max-w-2xl">
+      <!-- Feature 10: Card position + Feature 5: Timer -->
+      <div class="mb-2 flex items-center justify-between text-sm text-default-muted">
+        <span>{{ cardPositionLabel }}</span>
+        <span><UIcon name="i-lucide-clock" class="inline size-3.5" /> {{ formattedTime }}</span>
+      </div>
+
       <!-- Progress Bar -->
       <div class="mb-4">
         <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -257,6 +391,31 @@ onBeforeUnmount(() => {
             :style="{ width: `${progressPercent}%` }"
           />
         </div>
+      </div>
+
+      <!-- Feature 6: Previous card button -->
+      <div class="mb-2 flex items-center justify-between">
+        <UButton
+          v-if="currentIndex > 0"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-arrow-left"
+          size="sm"
+          @click="goToPreviousCard"
+        >
+          Previous <UKbd value="←" class="ml-1" />
+        </UButton>
+        <span v-else />
+        <!-- Feature 9: Shortcut help button -->
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-keyboard"
+          size="sm"
+          @click="showShortcuts = true"
+        >
+          <UKbd value="?" class="ml-1" />
+        </UButton>
       </div>
 
       <div
@@ -340,5 +499,75 @@ onBeforeUnmount(() => {
         </UButton>
       </div>
     </div>
+
+    <!-- Feature 9: Keyboard Shortcuts Modal -->
+    <UModal v-model:open="showShortcuts" title="Keyboard Shortcuts" description="Available shortcuts during study">
+      <template #body>
+        <div class="space-y-2 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-default">Flip card</span>
+            <div class="flex gap-1">
+              <UKbd value="Space" />
+              <UKbd value="Enter" />
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Rate: Again</span>
+            <UKbd value="1" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Rate: Hard</span>
+            <UKbd value="2" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Rate: Good</span>
+            <UKbd value="3" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Rate: Easy</span>
+            <UKbd value="4" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Previous card</span>
+            <UKbd value="←" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Exit focus mode</span>
+            <UKbd value="Esc" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-default">Show shortcuts</span>
+            <UKbd value="?" />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </UPage>
 </template>
+
+<!-- Feature 19: Confetti animation styles -->
+<style scoped>
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 50;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  left: calc(var(--i) * 5%);
+  opacity: 0;
+  animation: confetti-fall 3s ease-in forwards;
+  animation-delay: calc(var(--i) * 0.1s);
+}
+
+@keyframes confetti-fall {
+  0% { opacity: 1; top: -10px; transform: rotate(0deg) translateX(0); }
+  100% { opacity: 0; top: 100vh; transform: rotate(720deg) translateX(calc((var(--i) - 10) * 5px)); }
+}
+</style>
