@@ -1,6 +1,6 @@
 {
   "name": "flashcard-pro",
-  "version": "1.15.8",
+  "version": "1.15.9",
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
