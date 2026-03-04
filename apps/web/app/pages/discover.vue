@@ -29,8 +29,10 @@ const sortedDiscoverDecks = computed(() => {
   if (!decks.value) return []
   const copy = [...decks.value]
   if (discoverSortBy.value === 'cards') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     copy.sort((a, b: any) => (b.cardCount ?? 0) - (a.cardCount ?? 0))
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     copy.sort((a, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }
   return copy
@@ -41,6 +43,7 @@ const decksByCategory = computed(() => {
   const groups: Record<string, typeof sortedDiscoverDecks.value> = {}
   
   for (const deck of sortedDiscoverDecks.value) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const catName = (deck as any).categoryName || 'Uncategorized'
     if (!groups[catName]) {
       groups[catName] = []
