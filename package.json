@@ -19,12 +19,12 @@
     "db:migrate": "pnpm --filter web run db:migrate",
     "dev:kill": "sh scripts/dev-kill.sh",
     "test:e2e": "playwright test",
-    "test:e2e:prod": "BASE_URL=https://flashcard-pro.narduk.workers.dev playwright test",
+    "test:e2e:prod": "BASE_URL=https://flashcard-pro.nard.uk playwright test",
     "generate:favicons": "npx tsx tools/generate-favicons.ts",
     "prod:cleanup-seed": "doppler run -- npx tsx tools/cleanup-e2e-and-seed-prod.ts",
-    "predev": "node tools/check-setup.js",
-    "prebuild": "node tools/check-setup.js",
-    "predeploy": "node tools/check-setup.js",
+    "predev": "node tools/check-setup.cjs",
+    "prebuild": "node tools/check-setup.cjs",
+    "predeploy": "node tools/check-setup.cjs",
     "update-layer": "npx tsx tools/update-layer.ts"
   },
   "pnpm": {
