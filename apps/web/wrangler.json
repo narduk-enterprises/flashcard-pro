@@ -1,11 +1,11 @@
 {
-  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/schemas/config/wrangler.json",
   "name": "flashcard-pro",
   "main": ".output/server/index.mjs",
   "assets": {
     "directory": ".output/public"
   },
-  "compatibility_date": "2026-03-03",
+  "compatibility_date": "2026-03-04",
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -26,5 +26,8 @@
     "crons": [
       "0 */4 * * *"
     ]
-  }
+  },
+  "routes": [
+    { "pattern": "flashcard-pro.nard.uk", "custom_domain": true }
+  ]
 }

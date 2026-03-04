@@ -31,7 +31,7 @@ export default defineNuxtConfig({
     gaPropertyId: process.env.GA_PROPERTY_ID || '',
     posthogProjectId: process.env.POSTHOG_PROJECT_ID || '',
     public: {
-      appUrl: process.env.SITE_URL || 'https://flashcard-pro.narduk.workers.dev',
+      appUrl: process.env.SITE_URL || 'https://flashcard-pro.nard.uk',
       appName: process.env.APP_NAME || 'FlashCardPro',
       // Analytics
       posthogPublicKey: process.env.POSTHOG_PUBLIC_KEY || '',
@@ -44,7 +44,7 @@ export default defineNuxtConfig({
   },
 
   site: {
-    url: process.env.SITE_URL || 'https://flashcard-pro.narduk.workers.dev',
+    url: process.env.SITE_URL || 'https://flashcard-pro.nard.uk',
     name: 'FlashCardPro',
     description: 'Create, study, and share flashcard decks with intelligent spaced repetition. Free, fast, and beautiful.',
     defaultLocale: 'en',
@@ -62,14 +62,14 @@ export default defineNuxtConfig({
     identity: {
       type: 'Organization',
       name: 'FlashCardPro',
-      url: process.env.SITE_URL || 'https://flashcard-pro.narduk.workers.dev',
+      url: process.env.SITE_URL || 'https://flashcard-pro.nard.uk',
       logo: '/favicon.svg',
     },
   },
 
   image: {
     cloudflare: {
-      baseURL: process.env.SITE_URL || 'https://flashcard-pro.narduk.workers.dev',
+      baseURL: process.env.SITE_URL || 'https://flashcard-pro.nard.uk',
     },
   },
 })

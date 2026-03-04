@@ -3,7 +3,7 @@
 **flashcard-pro** — initialized from `narduk-nuxt-template`.
 
 ## Live Site
-[https://flashcard-pro.narduk.workers.dev](https://flashcard-pro.narduk.workers.dev)
+[https://flashcard-pro.nard.uk](https://flashcard-pro.nard.uk)
 
 ## Local Development
 
@@ -20,7 +20,7 @@ Pushes to `main` are automatically built and deployed via the GitHub Actions CI 
 1. **Doppler (recommended):** `DOPPLER_TOKEN` in the repo’s **Settings → Secrets and variables → Actions**.  
    To set it automatically: ensure `git remote` points to this repo, run `gh auth login`, then:
    ```bash
-   pnpm run setup -- --name="flashcard-pro" --display="FlashCardPro" --url="https://flashcard-pro.narduk.workers.dev" --repair
+   pnpm run setup -- --name="flashcard-pro" --display="FlashCardPro" --url="https://flashcard-pro.nard.uk" --repair
    ```
 2. **Direct Cloudflare:** Add **Settings → Secrets and variables → Actions**:
    - `CLOUDFLARE_API_TOKEN`
