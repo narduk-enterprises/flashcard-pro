@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "doppler run -- pnpm -r build",
-    "deploy": "doppler run -- pnpm --filter web run deploy",
+    "ship": "doppler run -- pnpm --filter web run deploy",
     "build:plugins": "pnpm --filter @narduk/eslint-config build",
     "prelint": "pnpm run build:plugins",
     "lint": "pnpm run prelint && turbo run lint",
@@ -24,9 +24,10 @@
     "prod:cleanup-seed": "doppler run -- npx tsx tools/cleanup-e2e-and-seed-prod.ts",
     "predev": "node tools/check-setup.cjs",
     "prebuild": "node tools/check-setup.cjs",
-    "predeploy": "node tools/check-setup.cjs",
+    "preship": "node tools/check-setup.cjs",
     "update-layer": "npx tsx tools/update-layer.ts",
-    "postinstall": "node -e \"if(!require('fs').existsSync('.setup-complete'))console.log('\\n⚠️  Run pnpm run setup before doing anything else! See AGENTS.md.\\n')\""
+    "postinstall": "node -e \"if(!require('fs').existsSync('.setup-complete'))console.log('\\n⚠️  Run pnpm run setup before doing anything else! See AGENTS.md.\\n')\"",
+    "predeploy": "node tools/check-setup.cjs"
   },
   "pnpm": {
     "overrides": {
