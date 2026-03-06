@@ -7,7 +7,7 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  const user = await requireAuth(event)
   const body = await readBody(event)
   const parsed = bodySchema.safeParse(body)
   if (!parsed.success) {

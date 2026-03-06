@@ -8,7 +8,7 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  const user = await requireAuth(event)
   const cardId = getRouterParam(event, 'cardId')
   if (!cardId) throw createError({ statusCode: 400, message: 'Missing card id' })
   const body = await readBody(event)

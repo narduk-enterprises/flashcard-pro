@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { decks } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  const user = await requireAuth(event)
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, message: 'Missing deck id' })
   const db = useDatabase(event)
