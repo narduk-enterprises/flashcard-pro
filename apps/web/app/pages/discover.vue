@@ -13,7 +13,7 @@ useWebPageSchema({
 
 const search = ref('')
 const { decks, pending, error } = useDiscoverDecks(search)
-const { isLoggedIn } = useAuth()
+const { isAuthenticated: isLoggedIn } = useAuth()
 const { cloneDeck } = useCloneDeck()
 const { addFavorite, removeFavorite, isFavorited } = useFavorites()
 const cloningDeckId = ref<string | null>(null)

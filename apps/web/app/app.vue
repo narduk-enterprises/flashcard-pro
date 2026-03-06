@@ -2,7 +2,7 @@
 const route = useRoute()
 const colorMode = useColorMode()
 const appName = useRuntimeConfig().public.appName || ''
-const { user, isLoggedIn, logout } = useAuth()
+const { user, isAuthenticated: isLoggedIn, logout } = useAuth()
 const { locale, setLocale, availableLocales } = useAppI18n()
 const isLoggingOut = ref(false)
 const commandOpen = ref(false)

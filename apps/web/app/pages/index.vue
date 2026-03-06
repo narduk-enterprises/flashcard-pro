@@ -25,7 +25,7 @@ useSchemaOrg([{
 }])
 
 const { decks, pending, error } = useDecks()
-const { isLoggedIn, user } = useAuth()
+const { isAuthenticated: isLoggedIn, user } = useAuth()
 const { stats } = useStudyStats()
 const { isFavorited } = useFavorites()
 

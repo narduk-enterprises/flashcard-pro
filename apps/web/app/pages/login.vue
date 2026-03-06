@@ -20,7 +20,7 @@ async function onSubmit() {
   error.value = ''
   loading.value = true
   try {
-    await login({ email: state.email, password: state.password })
+    await login({ email: state.email, password: state.password }, "")
     await navigateTo(returnUrl.value)
   } catch (e: unknown) {
     const msg = e && typeof e === 'object' && 'data' in e && e.data && typeof (e.data as { message?: string }).message === 'string'
