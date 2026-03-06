@@ -1,9 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { favorites, decks } from '../../database/schema'
-import { getSessionFromEvent } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = await getSessionFromEvent(event)
+  const user = await requireAuth(event)
   if (!user) return []
   const db = useDatabase(event)
   const list = await db

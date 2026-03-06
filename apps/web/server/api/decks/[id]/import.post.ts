@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { decks, cards } from '../../../database/schema'
 import { z } from 'zod'
-import { requireUser } from '../../../utils/auth'
 
 const cardSchema = z.object({
   front: z.string().min(1),

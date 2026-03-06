@@ -1,9 +1,8 @@
 import { eq, sql, count } from 'drizzle-orm'
 import { decks, cards, reviews } from '../../database/schema'
-import { getSessionFromEvent } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = await getSessionFromEvent(event)
+  const user = await requireAuth(event)
   if (!user) return { totalDecks: 0, totalCards: 0, totalReviews: 0, averageRating: 0 }
   const db = useDatabase(event)
 

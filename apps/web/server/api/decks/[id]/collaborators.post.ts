@@ -1,7 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { collaborators, decks, users } from '../../../database/schema'
 import { z } from 'zod'
-import { requireUser } from '../../../utils/auth'
 
 const bodySchema = z.object({
   email: z.string().email(),

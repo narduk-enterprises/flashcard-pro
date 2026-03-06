@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm'
 import { decks } from '../../database/schema'
-import { requireUser } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)

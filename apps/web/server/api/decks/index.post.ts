@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { decks } from '../../database/schema'
 import { z } from 'zod'
-import { requireUser } from '../../utils/auth'
 
 const bodySchema = z.object({
   name: z.string().min(1).max(500),

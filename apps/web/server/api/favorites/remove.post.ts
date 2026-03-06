@@ -1,7 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { favorites } from '../../database/schema'
 import { z } from 'zod'
-import { requireUser } from '../../utils/auth'
 
 const bodySchema = z.object({
   deckId: z.string().min(1),
